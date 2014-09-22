@@ -2,15 +2,16 @@
 
 namespace Kunstmaan\PagePartBundle\Controller;
 
-use Kunstmaan\PagePartBundle\Helper\PagePartConfigurationReader;
 use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdmin;
+use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdminFactory;
+use Kunstmaan\PagePartBundle\Service\PagePartService;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Controller for the pagepart administration
+ * Controller for the page part administration
  */
 class PagePartAdminController extends Controller
 {
@@ -19,6 +20,8 @@ class PagePartAdminController extends Controller
      * @Template("KunstmaanPagePartBundle:PagePartAdminTwigExtension:pagepart.html.twig")
      *
      * @param \Symfony\Component\HttpFoundation\Request $request
+     *
+     * @throws \RuntimeException
      *
      * @return array
      */
@@ -33,25 +36,28 @@ class PagePartAdminController extends Controller
 
         $page = $em->getRepository($pageClassName)->findOneById($pageId);
 
-        $pagePartConfigurationReader = new PagePartConfigurationReader($this->container->get('kernel'));
-        $pagePartAdminConfigurators  = $pagePartConfigurationReader->getPagePartAdminConfigurators($page);
+	/**
+	 * @var PagePartService $pagePartService
+	 */
+	$pagePartService = $this->get('kunstmaan_pagetemplate.pagepart_service');
+	$configurator    = $pagePartService->getPagePartAdminConfigurator($page, $context);
 
-        $pagePartAdminConfigurator = null;
-        foreach ($pagePartAdminConfigurators as $ppac) {
-            if ($context == $ppac->getContext()) {
-                $pagePartAdminConfigurator = $ppac;
-            }
-        }
-
-        if (is_null($pagePartAdminConfigurator)) {
+	if (is_null($configurator)) {
             throw new \RuntimeException(sprintf('No page part admin configurator found for context "%s".', $context));
         }
 
-        $pagePartAdmin = new PagePartAdmin($pagePartAdminConfigurator, $em, $page, $context, $this->container);
-        $pagePart      = new $pagePartClass();
+	/**
+	 * @var PagePartAdminFactory $pagePartAdminFactory
+	 */
+	$pagePartAdminFactory = $this->get('kunstmaan_pagepartadmin.factory');
 
-        $formFactory = $this->container->get('form.factory');
-        $formBuilder = $formFactory->createBuilder('form');
+	/**
+	 * @var PagePartAdmin $pagePartAdmin
+	 */
+	$pagePartAdmin = $pagePartAdminFactory->createList($configurator, $page, $context);
+	$pagePart      = new $pagePartClass();
+	$formFactory   = $this->get('form.factory');
+	$formBuilder   = $formFactory->createBuilder('form');
         $pagePartAdmin->adaptForm($formBuilder);
         $id = 'newpp_' . time();
 
@@ -59,16 +65,17 @@ class PagePartAdminController extends Controller
         $data['pagepartadmin_' . $id] = $pagePart;
         $adminType                    = $pagePart->getDefaultAdminType();
         if (!is_object($adminType) && is_string($adminType)) {
-            $adminType = $this->container->get($adminType);
+	    $adminType = $this->get($adminType);
         }
-        $formBuilder->add('pagepartadmin_' . $id, $adminType);
-        $formBuilder->setData($data);
+	$formBuilder
+	    ->add('pagepartadmin_' . $id, $adminType)
+	    ->setData($data);
         $form     = $formBuilder->getForm();
-        $formview = $form->createView();
+	$formView = $form->createView();
 
         return array(
             'id'            => $id,
-            'form'          => $formview,
+	    'form'          => $formView,
             'pagepart'      => $pagePart,
             'pagepartadmin' => $pagePartAdmin,
             'editmode'      => true

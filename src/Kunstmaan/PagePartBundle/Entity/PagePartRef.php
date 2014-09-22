@@ -82,10 +82,14 @@ class PagePartRef
 
     /**
      * @param integer $num
+     *
+     * @return PagePartRef
      */
     public function setId($num)
     {
         $this->id = $num;
+
+	return $this;
     }
 
     /**
@@ -100,10 +104,14 @@ class PagePartRef
 
     /**
      * @param integer $id
+     *
+     * @return PagePartRef
      */
     public function setPageId($id)
     {
         $this->pageId = $id;
+
+	return $this;
     }
 
     /**
@@ -120,10 +128,14 @@ class PagePartRef
      * Set pageEntityname
      *
      * @param string $pageEntityname
+     *
+     * @return PagePartRef
      */
     public function setPageEntityname($pageEntityname)
     {
         $this->pageEntityname = $pageEntityname;
+
+	return $this;
     }
 
     /**
@@ -140,10 +152,14 @@ class PagePartRef
      * Set context
      *
      * @param string $context
+     *
+     * @return PagePartRef
      */
     public function setContext($context)
     {
         $this->context = $context;
+
+	return $this;
     }
 
     /**
@@ -160,10 +176,14 @@ class PagePartRef
      * Set sequencenumber
      *
      * @param integer $sequencenumber
+     *
+     * @return PagePartRef
      */
     public function setSequencenumber($sequencenumber)
     {
         $this->sequencenumber = $sequencenumber;
+
+	return $this;
     }
 
     /**
@@ -180,10 +200,14 @@ class PagePartRef
      * Set pagePartId
      *
      * @param string $pagePartId
+     *
+     * @return PagePartRef
      */
     public function setPagePartId($pagePartId)
     {
         $this->pagePartId = $pagePartId;
+
+	return $this;
     }
 
     /**
@@ -200,10 +224,14 @@ class PagePartRef
      * Set pagePartEntityname
      *
      * @param string $pagePartEntityname
+     *
+     * @return PagePartRef
      */
     public function setPagePartEntityname($pagePartEntityname)
     {
         $this->pagePartEntityname = $pagePartEntityname;
+
+	return $this;
     }
 
     /**
@@ -220,10 +248,14 @@ class PagePartRef
      * Set created
      *
      * @param \DateTime $created
+     *
+     * @return PagePartRef
      */
     public function setCreated(\DateTime $created)
     {
         $this->created = $created;
+
+	return $this;
     }
 
     /**
@@ -240,10 +272,14 @@ class PagePartRef
      * Set updated
      *
      * @param \DateTime $updated
+     *
+     * @return PagePartRef
      */
     public function setUpdated(\DateTime $updated)
     {
         $this->updated = $updated;
+
+	return $this;
     }
 
     /**
@@ -252,6 +288,8 @@ class PagePartRef
     public function setUpdatedValue()
     {
         $this->setUpdated(new \DateTime());
+
+	return $this;
     }
 
     /**
@@ -259,16 +297,6 @@ class PagePartRef
      */
     public function __toString()
     {
-        return "pagepartref in context " . $this->getContext();
-    }
-
-    /**
-     * @param \Doctrine\ORM\EntityManager $em
-     *
-     * @return \Kunstmaan\PagePartBundle\Helper\PagePartInterface
-     */
-    public function getPagePart(EntityManager $em)
-    {
-        return $em->getRepository($this->getPagePartEntityname())->find($this->getPagePartId());
+	return 'pagepartref in context ' . $this->getContext();
     }
 }

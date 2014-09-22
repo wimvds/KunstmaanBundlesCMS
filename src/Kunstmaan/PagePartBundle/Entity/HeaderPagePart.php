@@ -1,11 +1,10 @@
 <?php
 
 namespace Kunstmaan\PagePartBundle\Entity;
-use Symfony\Component\Validator\Constraints\NotBlank;
-use Symfony\Component\Validator\Constraints\Email;
-use Symfony\Component\Validator\Mapping\ClassMetadata;
+
 use Doctrine\ORM\Mapping as ORM;
 use Kunstmaan\PagePartBundle\Form\HeaderPagePartAdminType;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Class that defines a header page part object to add to a page
@@ -15,25 +14,17 @@ use Kunstmaan\PagePartBundle\Form\HeaderPagePartAdminType;
  */
 class HeaderPagePart extends AbstractPagePart
 {
-
     /**
      * @ORM\Column(type="integer", nullable=true)
+     * @Assert\NotBlank(message="headerpagepart.niv.not_blank")
      */
     protected $niv;
 
     /**
      * @ORM\Column(type="string", nullable=true)
+     * @Assert\NotBlank(message="headerpagepart.title.not_blank")
      */
     protected $title;
-
-    /**
-     * @param ClassMetadata $metadata
-     */
-    public static function loadValidatorMetadata(ClassMetadata $metadata)
-    {
-        $metadata->addPropertyConstraint('niv', new NotBlank(array('message' => 'headerpagepart.niv.not_blank')));
-        $metadata->addPropertyConstraint('title', new NotBlank(array('message' => 'headerpagepart.title.not_blank')));
-    }
 
     /**
      * Set niv
@@ -84,7 +75,7 @@ class HeaderPagePart extends AbstractPagePart
      */
     public function __toString()
     {
-        return "HeaderPagePart " . $this->getTitle();
+	return 'HeaderPagePart ' . $this->getTitle();
     }
 
     /**
@@ -92,7 +83,7 @@ class HeaderPagePart extends AbstractPagePart
      */
     public function getDefaultView()
     {
-        return "KunstmaanPagePartBundle:HeaderPagePart:view.html.twig";
+	return 'KunstmaanPagePartBundle:HeaderPagePart:view.html.twig';
     }
 
     /**

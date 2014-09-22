@@ -2,14 +2,12 @@
 
 namespace Kunstmaan\PagePartBundle\Helper;
 
-use Kunstmaan\PagePartBundle\PageTemplate\PageTemplate;
-use Symfony\Component\Yaml\Yaml;
-use Kunstmaan\PagePartBundle\PageTemplate\Row;
-use Kunstmaan\PagePartBundle\PageTemplate\Region;
-use Symfony\Component\HttpKernel\KernelInterface;
-use Kunstmaan\FormBundle\Form\AbstractFormPageAdminType;
-use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdminConfigurator;
 use Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator;
+use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdminConfigurator;
+use Kunstmaan\PagePartBundle\PageTemplate\PageTemplate;
+use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\Yaml\Yaml;
+
 /**
  * PagePartConfigurationReader
  */
@@ -32,18 +30,22 @@ class PagePartConfigurationReader
      * This will read the $name file and parse it to the PageTemplate
      *
      * @param string $name
+     *
      * @return PageTemplate
      * @throws \Exception
      */
     public function parse($name)
     {
         $nameParts = explode(':', $name);
-        if (count($nameParts) != 2)  {
-            throw new \Exception(sprintf('Malformed namespaced configuration name "%s" (expecting "namespace:pagename.yml").', $name));
+	if (count($nameParts) != 2) {
+	    throw new \Exception(sprintf(
+		'Malformed namespaced configuration name "%s" (expecting "namespace:pagename.yml").',
+		$name
+	    ));
         }
 
         list($namespace, $name) = $nameParts;
-        $path = $this->kernel->locateResource('@'.$namespace.'/Resources/config/pageparts/'.$name.'.yml');
+	$path    = $this->kernel->locateResource('@' . $namespace . '/Resources/config/pageparts/' . $name . '.yml');
         $rawData = Yaml::parse($path);
         if (!array_key_exists('types', $rawData)) {
             $rawData['types'] = array();
@@ -53,7 +55,7 @@ class PagePartConfigurationReader
                 $rawData['extends'] = array($rawData['extends']);
             }
             foreach ($rawData['extends'] as $extend) {
-                $recursiveResult = $this->parse($namespace.':'.$extend);
+		$recursiveResult  = $this->parse($namespace . ':' . $extend);
                 $rawData['types'] = array_merge($recursiveResult->getPossiblePagePartTypes(), $rawData['types']);
             }
         }
@@ -70,10 +72,11 @@ class PagePartConfigurationReader
         }
 
         $result = new PagePartAdminConfigurator();
-        $result->setName($rawData['name']);
-        $result->setInternalName($name);
-        $result->setPossiblePagePartTypes(array_values($types));
-        $result->setContext($rawData['context']);
+	$result
+	    ->setName($rawData['name'])
+	    ->setInternalName($name)
+	    ->setPossiblePagePartTypes(array_values($types))
+	    ->setContext($rawData['context']);
 
         return $result;
     }
@@ -90,10 +93,17 @@ class PagePartConfigurationReader
         foreach ($page->getPagePartAdminConfigurations() as $pagePartAdminConfiguration) {
             if (is_string($pagePartAdminConfiguration)) {
                 $pagePartAdminConfigurators[] = $this->parse($pagePartAdminConfiguration);
-            } else if (is_object($pagePartAdminConfiguration) && $pagePartAdminConfiguration instanceof AbstractPagePartAdminConfigurator) {
-                $pagePartAdminConfigurators[] = $pagePartAdminConfiguration;
             } else {
-                throw new \Exception("don't know how to handle the pagePartAdminConfiguration " . get_class($pagePartAdminConfiguration));
+		if (is_object(
+			$pagePartAdminConfiguration
+		    ) && $pagePartAdminConfiguration instanceof AbstractPagePartAdminConfigurator
+		) {
+		    $pagePartAdminConfigurators[] = $pagePartAdminConfiguration;
+		} else {
+		    throw new \Exception("don't know how to handle the pagePartAdminConfiguration " . get_class(
+			    $pagePartAdminConfiguration
+			));
+		}
             }
         }
 

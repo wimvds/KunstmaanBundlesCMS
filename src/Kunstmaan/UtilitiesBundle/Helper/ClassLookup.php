@@ -5,7 +5,7 @@ namespace Kunstmaan\UtilitiesBundle\Helper;
 use Doctrine\ORM\Proxy\Proxy;
 
 /**
- * Helper for looking up the classname, not the ORM proxy
+ * Helper for looking up the class name, not the ORM proxy
  */
 class ClassLookup
 {
@@ -14,7 +14,7 @@ class ClassLookup
      *
      * @param mixed $object
      *
-     * @return string the name of the class and if the given $object isn't a vaid Object false will be returned.
+     * @return string the name of the class and if the given $object isn't a valid Object false will be returned.
      */
     public static function getClass($object)
     {

@@ -7,7 +7,6 @@ namespace Kunstmaan\PagePartBundle\PagePartAdmin;
  */
 abstract class AbstractPagePartAdminConfigurator
 {
-
     /**
      * @return array
      */

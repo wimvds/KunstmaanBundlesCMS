@@ -2,7 +2,6 @@
 
 namespace Kunstmaan\PagePartBundle\Repository;
 
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityRepository;
 use Kunstmaan\AdminBundle\Entity\DeepCloneInterface;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
@@ -18,38 +17,46 @@ class PagePartRefRepository extends EntityRepository
 
     /**
      * @param HasPagePartsInterface $page               The page
-     * @param PagePartInterface     $pagepart           The pagepart
-     * @param integer               $sequencenumber     The sequence numer
+     * @param PagePartInterface     $pagePart           The pagePart
+     * @param integer               $sequencenumber     The sequence number
      * @param string                $context            The context
      * @param bool                  $pushOtherPageParts Push other pageparts (sequence + 1)
      *
      * @return \Kunstmaan\PagePartBundle\Entity\PagePartRef
      */
-    public function addPagePart(HasPagePartsInterface $page, PagePartInterface $pagepart, $sequencenumber, $context = "main", $pushOtherPageParts = true)
-    {
+    public function addPagePart(
+	HasPagePartsInterface $page,
+	PagePartInterface $pagePart,
+	$sequencenumber,
+	$context = 'main',
+	$pushOtherPageParts = true
+    ) {
         if ($pushOtherPageParts) {
-            $pagepartrefs = $this->getPagePartRefs($page);
-            foreach ($pagepartrefs as $pagepartref) {
-                if ($pagepartref->getSequencenumber() >= $sequencenumber) {
-                    $pagepartref->setSequencenumber($pagepartref->getSequencenumber() + 1);
-                    $this->getEntityManager()->persist($pagepartref);
+	    $pagePartRefs = $this->getPagePartRefs($page);
+	    foreach ($pagePartRefs as $pagePartRef) {
+		if ($pagePartRef->getSequencenumber() >= $sequencenumber) {
+		    $pagePartRef->setSequencenumber($pagePartRef->getSequencenumber() + 1);
+		    $this->getEntityManager()->persist($pagePartRef);
                 }
             }
         }
 
-        $pagepartref = new \Kunstmaan\PagePartBundle\Entity\PagePartRef();
-        $pagepartref->setContext($context);
-        $pageClassname = ClassLookup::getClass($page);
-        $pagepartref->setPageEntityname($pageClassname);
-        $pagepartref->setPageId($page->getId());
-        $pagepartClassname = ClassLookup::getClass($pagepart);
-        $pagepartref->setPagePartEntityname($pagepartClassname);
-        $pagepartref->setPagePartId($pagepart->getId());
-        $pagepartref->setSequencenumber($sequencenumber);
-        $this->getEntityManager()->persist($pagepartref);
+	$pageClass     = ClassLookup::getClass($page);
+	$pagePartClass = ClassLookup::getClass($pagePart);
+
+	$pagePartRef = new \Kunstmaan\PagePartBundle\Entity\PagePartRef();
+	$pagePartRef
+	    ->setContext($context)
+	    ->setPageEntityname($pageClass)
+	    ->setPageId($page->getId())
+	    ->setPagePartEntityname($pagePartClass)
+	    ->setPagePartId($pagePart->getId())
+	    ->setSequencenumber($sequencenumber);
+
+	$this->getEntityManager()->persist($pagePartRef);
         $this->getEntityManager()->flush();
 
-        return $pagepartref;
+	return $pagePartRef;
     }
 
     /**
@@ -58,66 +65,74 @@ class PagePartRefRepository extends EntityRepository
      *
      * @return PagePartRef[]
      */
-    public function getPagePartRefs(HasPagePartsInterface $page, $context = "main")
+    public function getPagePartRefs(HasPagePartsInterface $page, $context = 'main')
     {
-        return $this->findBy(array(
-            'pageId' => $page->getId(),
-            'pageEntityname' => ClassLookup::getClass($page),
-            'context' => $context
-        ), array('sequencenumber' => 'ASC'));
+	return $this->findBy(
+	    array(
+		'pageId'         => $page->getId(),
+		'pageEntityname' => ClassLookup::getClass($page),
+		'context'        => $context
+	    ),
+	    array('sequencenumber' => 'ASC')
+	);
     }
 
     /**
      * @param HasPagePartsInterface $page    The page
-     * @param string                $context The pagepart context
+     * @param string                $context The pagePart context
      *
      * @return PagePartInterface[]
      */
-    public function getPageParts(HasPagePartsInterface $page, $context = "main")
+    public function getPageParts(HasPagePartsInterface $page, $context = 'main')
     {
-        $pagepartrefs = $this->getPagePartRefs($page, $context);
+	$pagePartRefs = $this->getPagePartRefs($page, $context);
 
-        // Group pagepartrefs per type and remember the sorting order
-        $types = $order = array();
+	// Group page part refs per type and remember the sorting order
+	$types   = $order = array();
         $counter = 1;
-        foreach ($pagepartrefs as $pagepartref) {
-            $types[$pagepartref->getPagePartEntityname()][] = $pagepartref->getPagePartId();
-            $order[$pagepartref->getPagePartEntityname() . $pagepartref->getPagePartId()] = $counter;
+	foreach ($pagePartRefs as $pagePartRef) {
+	    $entityName                                         = $pagePartRef->getPagePartEntityname();
+	    $types[$entityName][]                               = $pagePartRef->getPagePartId();
+	    $order[$entityName . $pagePartRef->getPagePartId()] = $counter;
             $counter++;
         }
 
-        // Fetch all the pageparts (only one query per pagepart type)
+	// Fetch all the pageparts (only one query per pagePart type)
         $pageparts = array();
-        foreach ($types as $classname => $ids) {
-            $result = $this->getEntityManager()->getRepository($classname)->findBy(array('id' => $ids));
+	foreach ($types as $className => $ids) {
+	    $result    = $this->getEntityManager()->getRepository($className)->findBy(array('id' => $ids));
             $pageparts = array_merge($pageparts, $result);
         }
 
         // Order the pageparts
-        usort($pageparts, function($a, $b) use ($order) {
-            $aPosition = $order[get_class($a) . $a->getId()];
-            $bPosition = $order[get_class($b) . $b->getId()];
+	usort(
+	    $pageparts,
+	    function ($a, $b) use ($order) {
+		$aPosition = $order[get_class($a) . $a->getId()];
+		$bPosition = $order[get_class($b) . $b->getId()];
 
-            if ($aPosition < $bPosition) {
-                return -1;
-            } elseif ($aPosition > $bPosition) {
-                return 1;
+		if ($aPosition < $bPosition) {
+		    return -1;
+		} elseif ($aPosition > $bPosition) {
+		    return 1;
+		}
+
+		return 0;
             }
-            return 0;
-        });
+	);
 
         return $pageparts;
     }
 
     /**
-     * @param EntityManager         $em       The entity manager
      * @param HasPagePartsInterface $fromPage The page from where you copy the pageparts
      * @param HasPagePartsInterface $toPage   The page to where you want to copy the pageparts
-     * @param string                $context  The pagepart context
+     * @param string                $context  The pagePart context
      */
-    public function copyPageParts(EntityManager $em, HasPagePartsInterface $fromPage, HasPagePartsInterface $toPage, $context = "main")
+    public function copyPageParts(HasPagePartsInterface $fromPage, HasPagePartsInterface $toPage, $context = 'main')
     {
-        $fromPageParts = $this->getPageParts($fromPage, $context);
+	$em             = $this->getEntityManager();
+	$fromPageParts  = $this->getPageParts($fromPage, $context);
         $sequenceNumber = 1;
         foreach ($fromPageParts as $fromPagePart) {
             $toPagePart = clone $fromPagePart;
@@ -126,7 +141,7 @@ class PagePartRefRepository extends EntityRepository
                 $toPagePart->deepClone();
             }
             $em->persist($toPagePart);
-            $em->flush($toPagePart);
+	    $em->flush();
             $this->addPagePart($toPage, $toPagePart, $sequenceNumber, $context, false);
             $sequenceNumber++;
         }
@@ -134,27 +149,28 @@ class PagePartRefRepository extends EntityRepository
 
     /**
      * @param HasPagePartsInterface $page              The page
-     * @param string                $pagepartClassname The classname of the pagepart
+     * @param string                $pagePartClassName The classname of the pagePart
      * @param string                $context           The context
      *
      * @return mixed
      */
-    public function countPagePartsOfType(HasPagePartsInterface $page, $pagepartClassname, $context = 'main')
+    public function countPagePartsOfType(HasPagePartsInterface $page, $pagePartClassName, $context = 'main')
     {
-        $em = $this->getEntityManager();
-        $pageClassname = ClassLookup::getClass($page);
+	$pageClassName = ClassLookup::getClass($page);
 
-        $sql = 'SELECT COUNT(pp.id) FROM KunstmaanPagePartBundle:PagePartRef pp
-                 WHERE pp.pageEntityname = :pageEntityname
-                   AND pp.pageId = :pageId
-                   AND pp.pagePartEntityname = :pagePartEntityname
-                   AND pp.context = :context';
+	$qb    = $this->createQueryBuilder('pp');
+	$query = $qb->select('COUNT(pp.id)')
+	    ->where('pp.pageEntityname = :pageEntityname')
+	    ->andWhere('pp.pageId = :pageId')
+	    ->andWhere('pp.pagePartEntityname = :pagePartEntityname')
+	    ->andWhere('pp.context = :context')
+	    ->setParameter('pageEntityname', $pageClassName)
+	    ->setParameter('pageId', $page->getId())
+	    ->setParameter('pagePartEntityname', $pagePartClassName)
+	    ->setParameter('context', $context)
+	    ->getQuery();
 
-        return $em->createQuery($sql)
-                ->setParameter('pageEntityname', $pageClassname)
-                ->setParameter('pageId', $page->getId())
-                ->setParameter('pagePartEntityname', $pagepartClassname)
-                ->setParameter('context', $context)->getSingleScalarResult();
+	return $query->getSingleScalarResult();
     }
 
     /**
@@ -167,17 +183,51 @@ class PagePartRefRepository extends EntityRepository
      */
     public function hasPageParts(HasPagePartsInterface $page, $context = 'main')
     {
-        $em = $this->getEntityManager();
-        $pageClassname = ClassLookup::getClass($page);
+	$pageClassName = ClassLookup::getClass($page);
 
-        $sql = 'SELECT COUNT(pp.id) FROM KunstmaanPagePartBundle:PagePartRef pp
-                 WHERE pp.pageEntityname = :pageEntityname
-                   AND pp.pageId = :pageId
-                   AND pp.context = :context';
+	$qb    = $this->createQueryBuilder('pp');
+	$query = $qb->select('COUNT(pp.id)')
+	    ->where('pp.pageEntityname = :pageEntityname')
+	    ->andWhere('pp.pageId = :pageId')
+	    ->andWhere('pp.context = :context')
+	    ->setParameter('pageEntityname', $pageClassName)
+	    ->setParameter('pageId', $page->getId())
+	    ->setParameter('context', $context)
+	    ->getQuery();
 
-        return $em->createQuery($sql)
-                ->setParameter('pageEntityname', $pageClassname)
-                ->setParameter('pageId', $page->getId())
-                ->setParameter('context', $context)->getSingleScalarResult() != 0;
+	return $query->getSingleScalarResult() != 0;
+
+    }
+
+    /**
+     * @param string $pagePartClass
+     * @param array  $ids
+     *
+     * @return PagePartInterface[]
+     */
+    public function getPagePartsByClassAndIds($pagePartClass, array $ids)
+    {
+	return $this->getEntityManager()->getRepository($pagePartClass)->findBy(array('id' => $ids));
+    }
+
+    /**
+     * @param mixed $object
+     */
+    public function persist($object)
+    {
+	$this->getEntityManager()->persist($object);
+    }
+
+    /**
+     * @param mixed $object
+     */
+    public function remove($object)
+    {
+	$this->getEntityManager()->remove($object);
+    }
+
+    public function flush()
+    {
+	$this->getEntityManager()->flush();
     }
 }

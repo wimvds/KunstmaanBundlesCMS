@@ -1,4 +1,5 @@
 <?php
+
 namespace Kunstmaan\PagePartBundle\PageTemplate;
 
 /**
@@ -22,8 +23,9 @@ class Region
      */
     public function __construct($name, $span)
     {
-        $this->setName($name);
-        $this->setSpan($span);
+	$this
+	    ->setName($name)
+	    ->setSpan($span);
     }
 
     /**
@@ -36,10 +38,14 @@ class Region
 
     /**
      * @param string $name
+     *
+     * @return Region
      */
     public function setName($name)
     {
         $this->name = $name;
+
+	return $this;
     }
 
     /**
@@ -52,9 +58,13 @@ class Region
 
     /**
      * @param number $span
+     *
+     * @return Region
      */
     public function setSpan($span)
     {
         $this->span = $span;
+
+	return $this;
     }
 }

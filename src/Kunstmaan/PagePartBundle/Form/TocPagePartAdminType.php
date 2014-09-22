@@ -1,6 +1,7 @@
 <?php
 
 namespace Kunstmaan\PagePartBundle\Form;
+
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolverInterface;
 use Symfony\Component\Form\AbstractType;
@@ -16,6 +17,7 @@ class TocPagePartAdminType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
+	parent::buildForm($builder, $options);
     }
 
     /**
@@ -33,8 +35,10 @@ class TocPagePartAdminType extends AbstractType
      */
     public function setDefaultOptions(OptionsResolverInterface $resolver)
     {
-        $resolver->setDefaults(array(
-            'data_class' => 'Kunstmaan\PagePartBundle\Entity\TocPagePart',
-        ));
+	$resolver->setDefaults(
+	    array(
+		'data_class' => 'Kunstmaan\PagePartBundle\Entity\TocPagePart',
+	    )
+	);
     }
 }

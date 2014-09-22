@@ -3,26 +3,22 @@
 namespace Kunstmaan\PagePartBundle\Twig\Extension;
 
 use Doctrine\ORM\EntityManager;
-use Kunstmaan\PagePartBundle\Repository\PagePartRefRepository;
-use Kunstmaan\PagePartBundle\Helper\PagePartInterface;
-use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
+use Doctrine\ORM\EntityManagerInterface;
+use Kunstmaan\PagePartBundle\Entity\PageTemplateConfiguration;
 use Kunstmaan\PagePartBundle\Helper\HasPageTemplateInterface;
-use Kunstmaan\PagePartBundle\Helper\PageTemplateConfigurationReader;
 use Kunstmaan\PagePartBundle\PageTemplate\PageTemplate;
+use Kunstmaan\PagePartBundle\Service\PageTemplateService;
 use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
- * PagePartTwigExtension
+ * PageTemplateTwigExtension
  */
 class PageTemplateTwigExtension extends \Twig_Extension
 {
-
-    protected $em;
-
     /**
-     * @var KernelInterface::
+     * @var PageTemplateService
      */
-    protected $kernel;
+    protected $templateService;
 
     /**
      * @var \Twig_Environment
@@ -30,13 +26,11 @@ class PageTemplateTwigExtension extends \Twig_Extension
     protected $environment;
 
     /**
-     * @param EntityManager   $em     The entity manager
-     * @param KernelInterface $kernel The kernel
+     * @param PageTemplateService    $templateService
      */
-    public function __construct(EntityManager $em, KernelInterface $kernel)
+    public function __construct(PageTemplateService $templateService)
     {
-        $this->em = $em;
-        $this->kernel = $kernel;
+	$this->templateService = $templateService;
     }
 
     /**
@@ -53,29 +47,25 @@ class PageTemplateTwigExtension extends \Twig_Extension
     public function getFunctions()
     {
         return array(
-            'render_pagetemplate'  => new \Twig_Function_Method($this, 'renderPageTemplate', array('needs_context' => true, 'is_safe' => array('html'))),
-            'getpagetemplate'  => new \Twig_Function_Method($this, 'getPageTemplate')
+	    'render_pagetemplate' => new \Twig_Function_Method($this, 'renderPageTemplate', array(
+		    'needs_context' => true,
+		    'is_safe'       => array('html')
+		)),
+	    'get_page_template'   => new \Twig_Function_Method($this, 'getPageTemplate')
         );
     }
 
     /**
      * @param array                    $twigContext The twig context
      * @param HasPageTemplateInterface $page        The page
-     * @param array                    $parameters  Some extra parameters
      *
      * @return string
      */
-    public function renderPageTemplate(array $twigContext, HasPageTemplateInterface $page, array $parameters = array())
+    public function renderPageTemplate(array $twigContext, HasPageTemplateInterface $page)
     {
-        $pageTemplateConfigurationReader = new PageTemplateConfigurationReader($this->kernel);
-        $pageTemplates = $pageTemplateConfigurationReader->getPageTemplates($page);
-
         /* @var $pageTemplate PageTemplate */
-        $pageTemplate = $pageTemplates[$this->getPageTemplate($page)];
-
-        $template = $this->environment->loadTemplate($pageTemplate->getTemplate());
-        /* @var $entityRepository PagePartRefRepository */
-        $entityRepository = $this->em->getRepository('KunstmaanPagePartBundle:PagePartRef');
+	$pageTemplate = $this->getPageTemplate($page);
+	$template     = $this->environment->loadTemplate($pageTemplate->getTemplate());
 
         return $template->render($twigContext);
     }
@@ -83,16 +73,26 @@ class PageTemplateTwigExtension extends \Twig_Extension
     /**
      * @param HasPageTemplateInterface $page The page
      *
-     * @return string
+     * @return PageTemplate
      */
     public function getPageTemplate(HasPageTemplateInterface $page)
     {
-        /**@var $entityRepository PageTemplateConfigurationRepository */
-        $entityRepository = $this->em->getRepository('KunstmaanPagePartBundle:PageTemplateConfiguration');
-        $entityRepository->setContainer($this->kernel->getContainer());
-        $pageTemplateConfiguration = $entityRepository->findOrCreateFor($page);
+	$pageTemplates             = $this->templateService->getPageTemplates($page);
+	$pageTemplateConfiguration = $this->getPageTemplateConfiguration($page);
 
-        return $pageTemplateConfiguration->getPageTemplate();
+	return $pageTemplates[$pageTemplateConfiguration->getPageTemplate()];
+    }
+
+    /**
+     * @param HasPageTemplateInterface $page The page
+     *
+     * @return PageTemplateConfiguration
+     */
+    private function getPageTemplateConfiguration(HasPageTemplateInterface $page)
+    {
+	$pageTemplateConfiguration = $this->templateService->findOrCreateFor($page);
+
+	return $pageTemplateConfiguration;
     }
 
     /**
@@ -102,5 +102,4 @@ class PageTemplateTwigExtension extends \Twig_Extension
     {
         return 'pagetemplate_twig_extension';
     }
-
 }

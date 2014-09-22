@@ -1,16 +1,35 @@
-parameters:
-#    kunstmaan_k_page_part.example.class: Kunstmaan\PagePartBundle\Example
-
 services:
-#    kunstmaan_k_page_part.example:
-#        class: %kunstmaan_k_page_part.example.class%
-#        arguments: [@service_id, "plain_value", %parameter%]
-    kunstmaan_pagepart.pageparts:
-        class: Kunstmaan\PagePartBundle\PagePartAdmin\Builder
+    kunstmaan_pagetemplate.pagetemplate_configuration_reader:
+	class: Kunstmaan\PagePartBundle\Helper\PageTemplateConfigurationReader
+	arguments: ["@kernel"]
+
+    kunstmaan_pagetemplate.repository.pagetemplate_configuration:
+	class:            Kunstmaan\PagePartBundle\Repository\PageTemplateConfigurationRepository
+	factory_service:  "doctrine.orm.entity_manager"
+	factory_method:   getRepository
+	arguments:        ["KunstmaanPagePartBundle:PageTemplateConfiguration"]
+
+    kunstmaan_pagetemplate.pagetemplate_service:
+	class: Kunstmaan\PagePartBundle\Service\PageTemplateService
+	arguments: ["@kunstmaan_pagetemplate.pagetemplate_configuration_reader", "@kunstmaan_pagetemplate.repository.pagetemplate_configuration"]
+
+    kunstmaan_pagetemplate.pagepart_configuration_reader:
+	class: Kunstmaan\PagePartBundle\Helper\PagePartConfigurationReader
+	arguments: ["@kernel"]
+
+    kunstmaan_pagetemplate.repository.pagepart_ref:
+	class:            Kunstmaan\PagePartBundle\Repository\PagePartRefRepository
+	factory_service:  "doctrine.orm.entity_manager"
+	factory_method:   getRepository
+	arguments:        ["KunstmaanPagePartBundle:PagePartRef"]
+
+    kunstmaan_pagetemplate.pagepart_service:
+	class: Kunstmaan\PagePartBundle\Service\PagePartService
+	arguments: ["@kunstmaan_pagetemplate.pagepart_configuration_reader", "@kunstmaan_pagetemplate.repository.pagepart_ref"]
 
     kunstmaan_pagepartadmin.factory:
         class: Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdminFactory
-        arguments: ['@service_container']
+	arguments: ["@service_container","@kunstmaan_pagetemplate.pagepart_service"]
 
     kunstmaan_pagepartadmin.twig.extension:
         class: Kunstmaan\PagePartBundle\Twig\Extension\PagePartAdminTwigExtension
@@ -19,16 +38,13 @@ services:
 
     kunstmaan_pageparts.twig.extension:
         class: Kunstmaan\PagePartBundle\Twig\Extension\PagePartTwigExtension
-        arguments:
-            - "@doctrine.orm.entity_manager"
+	arguments: ["@kunstmaan_pagetemplate.pagepart_service"]
         tags:
             - { name: twig.extension }
             
     kunstmaan_pagetemplate.twig.extension:
         class: Kunstmaan\PagePartBundle\Twig\Extension\PageTemplateTwigExtension
-        arguments:
-            - "@doctrine.orm.entity_manager"
-            - "@kernel"
+	arguments: ["@kunstmaan_pagetemplate.pagetemplate_service"]
         tags:
             - { name: twig.extension }
 
@@ -39,12 +55,18 @@ services:
 
     kunstmaan_pageparts.edit_node.listener:
         class: Kunstmaan\PagePartBundle\EventListener\NodeListener
-        arguments: ["@doctrine.orm.entity_manager", "@kernel", "@form.factory", "@kunstmaan_pagepartadmin.factory"]
+	arguments: ["@form.factory", "@kunstmaan_pagepartadmin.factory", "@kunstmaan_pagetemplate.pagetemplate_service", "@kunstmaan_pagetemplate.pagepart_service"]
         tags:
             - { name: kernel.event_listener, event: kunstmaan_node.adaptForm, method: adaptForm }
 
     kunstmaan_pageparts.clone.listener:
         class: Kunstmaan\PagePartBundle\EventListener\CloneListener
-        arguments: ["@doctrine.orm.entity_manager", "@kernel"]
+	arguments: ["@kunstmaan_pagetemplate.pagetemplate_service", "@kunstmaan_pagetemplate.pagepart_service"]
         tags:
             - { name: kernel.event_listener, event: kunstmaan_admin.postDeepCloneAndSave, method: postDeepCloneAndSave }
+
+#    kunstmaan_pageparts.form.type.tocpagepart:
+#        class: Kunstmaan\PagePartBundle\Form\TocPagePartAdminType
+#        arguments: ["@"]
+#        tags:
+#            - { name: form.type, alias: 'kunstmaan_pagepartbundle_tocpageparttype' }

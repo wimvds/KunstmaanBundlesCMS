@@ -1,10 +1,9 @@
 <?php
+
 namespace Kunstmaan\PagePartBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use Doctrine\ORM\EntityManager;
 use Kunstmaan\AdminBundle\Entity\AbstractEntity;
-use Kunstmaan\NodeBundle\Entity\PageInterface;
 
 /**
  * Configuration for page templates
@@ -97,15 +96,5 @@ class PageTemplateConfiguration extends AbstractEntity
         $this->pageTemplate = $pageTemplate;
 
         return $this;
-    }
-
-    /**
-     * @param \Doctrine\ORM\EntityManager $em
-     *
-     * @return PageInterface
-     */
-    public function getPage(EntityManager $em)
-    {
-        return $em->getRepository($this->getPageEntityname())->find($this->getPageId());
     }
 }

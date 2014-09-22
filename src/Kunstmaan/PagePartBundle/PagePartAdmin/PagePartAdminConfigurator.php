@@ -1,4 +1,5 @@
 <?php
+
 namespace Kunstmaan\PagePartBundle\PagePartAdmin;
 
 /**
@@ -6,7 +7,6 @@ namespace Kunstmaan\PagePartBundle\PagePartAdmin;
  */
 class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
 {
-
     /**
      * @var string
      */
@@ -16,7 +16,6 @@ class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
      * @var string
      */
     protected $internalName;
-
 
     /**
      * @var string
@@ -38,10 +37,14 @@ class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
 
     /**
      * @param array $pagePartTypes
+     *
+     * @return PagePartAdminConfigurator
      */
     public function setPossiblePagePartTypes(array $pagePartTypes)
     {
         $this->pagePartTypes = $pagePartTypes;
+
+	return $this;
     }
 
     /**
@@ -54,10 +57,14 @@ class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
 
     /**
      * @param string $name
+     *
+     * @return PagePartAdminConfigurator
      */
     public function setName($name)
     {
         $this->name = $name;
+
+	return $this;
     }
 
     /**
@@ -70,10 +77,14 @@ class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
 
     /**
      * @param string $internalName
+     *
+     * @return PagePartAdminConfigurator
      */
     public function setInternalName($internalName)
     {
         $this->internalName = $internalName;
+
+	return $this;
     }
 
     /**
@@ -86,9 +97,13 @@ class PagePartAdminConfigurator extends AbstractPagePartAdminConfigurator
 
     /**
      * @param string $context
+     *
+     * @return PagePartAdminConfigurator
      */
     public function setContext($context)
     {
         $this->context = $context;
+
+	return $this;
     }
 }

@@ -21,16 +21,10 @@ use Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator;
  */
 class PagePartWidget extends FormWidget
 {
-
     /**
      * @var AbstractPagePartAdminConfigurator
      */
     protected $pagePartAdminConfigurator;
-
-    /**
-     * @var EntityManager
-     */
-    protected $em;
 
     /**
      * @var PagePartAdminFactory
@@ -60,23 +54,26 @@ class PagePartWidget extends FormWidget
     /**
      * @param HasNodeInterface                  $page                      The page
      * @param Request                           $request                   The request
-     * @param EntityManager                     $em                        The entity manager
      * @param AbstractPagePartAdminConfigurator $pagePartAdminConfigurator The page part admin configurator
      * @param FormFactoryInterface              $formFactory               The form factory
      * @param PagePartAdminFactory              $pagePartAdminFactory      The page part admin factory
      */
-    public function __construct(HasNodeInterface $page, Request $request, EntityManager $em, AbstractPagePartAdminConfigurator $pagePartAdminConfigurator, FormFactoryInterface $formFactory, PagePartAdminFactory $pagePartAdminFactory)
-    {
+    public function __construct(
+	HasNodeInterface $page,
+	Request $request,
+	AbstractPagePartAdminConfigurator $pagePartAdminConfigurator,
+	FormFactoryInterface $formFactory,
+	PagePartAdminFactory $pagePartAdminFactory
+    ) {
         parent::__construct();
 
-        $this->page = $page;
-        $this->em = $em;
-        $this->formFactory = $formFactory;
+	$this->page                      = $page;
+	$this->formFactory               = $formFactory;
         $this->pagePartAdminConfigurator = $pagePartAdminConfigurator;
-        $this->pagePartAdminFactory = $pagePartAdminFactory;
-        $this->request = $request;
+	$this->pagePartAdminFactory      = $pagePartAdminFactory;
+	$this->request                   = $request;
 
-        $this->pagePartAdmin = $pagePartAdminFactory->createList($pagePartAdminConfigurator, $em, $page, null);
+	$this->pagePartAdmin = $pagePartAdminFactory->createList($pagePartAdminConfigurator, $page, null);
     }
 
     /**
@@ -122,7 +119,10 @@ class PagePartWidget extends FormWidget
         $formHelper = $this->getFormHelper();
 
         if (isset($formView['pagepartadmin_' . $this->pagePartAdmin->getContext()])) {
-            $errors = array_merge($errors, $formHelper->getRecursiveErrorMessages($formView['pagepartadmin_' . $this->pagePartAdmin->getContext()]));
+	    $errors = array_merge(
+		$errors,
+		$formHelper->getRecursiveErrorMessages($formView['pagepartadmin_' . $this->pagePartAdmin->getContext()])
+	    );
         }
 
         return $errors;
@@ -151,7 +151,7 @@ class PagePartWidget extends FormWidget
      */
     public function getExtraParams(Request $request)
     {
-        $params = array();
+	$params       = array();
         $editPagePart = $request->get('edit');
         if (isset($editPagePart)) {
             $params['editpagepart'] = $editPagePart;
@@ -159,5 +159,4 @@ class PagePartWidget extends FormWidget
 
         return $params;
     }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace Kunstmaan\PagePartBundle\PageTemplate;
 
 /**
@@ -6,7 +7,6 @@ namespace Kunstmaan\PagePartBundle\PageTemplate;
  */
 class Row
 {
-
     /**
      * @var Region[]
      */
@@ -30,9 +30,13 @@ class Row
 
     /**
      * @param array $regions
+     *
+     * @return Row
      */
     public function setRegions(array $regions)
     {
         $this->regions = $regions;
+
+	return $this;
     }
 }

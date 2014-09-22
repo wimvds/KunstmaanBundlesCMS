@@ -1,7 +1,6 @@
 {% set id = resource.page.id %}
 <section class="pp-new">
     <input type="hidden" class="deletefield" id="pagetemplate_template" name="pagetemplate_template" value="{{ resource.pagetemplate.name }}"/>
-
 {% for row in resource.pagetemplate.rows %}
      <div class="row-fluid">
         {% for region in row.regions %}
@@ -20,7 +19,7 @@
         {% endfor %}
     </div>
 {% endfor %}
-	{% if resource.pagetemplates|length > 1 %}
+{% if resource.pagetemplates|length > 1 %}
     <button class="btn" data-keyboard="true" data-toggle="modal" data-target="#change-template-modal{{id}}" name="change-template-button"><i class="icon-align-justify"></i> Change template</button>
     <!--Change template modal-->
 	<div id="change-template-modal{{id}}" class="modal hide fade change-template-modal">
@@ -57,7 +56,7 @@
 			</div>
 		</div>
 	</div>
-	{% endif %}
+{% endif %}
 </section>
 <script>
     PageTemplateEditor = {

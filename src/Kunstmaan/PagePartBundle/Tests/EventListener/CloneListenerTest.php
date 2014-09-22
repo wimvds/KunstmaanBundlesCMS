@@ -12,29 +12,17 @@ use Kunstmaan\AdminBundle\Event\DeepCloneAndSaveEvent;
 class CloneListenerTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var Doctrine\ORM\EntityManager
-     */
-    protected $em;
-
-    /**
-     * @var Symfony\Component\HttpKernel\KernelInterface
-     */
-    protected $kernel;
-
-    /**
      * @var Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator
      */
     protected $configurator;
 
     /**
-     * @var Doctrine\ORM\EntityRepository
-     */
-    protected $repo;
-
-    /**
      * @var CloneListener
      */
     protected $object;
+
+    protected $pageTemplateService;
+    protected $pagePartService;
 
     /**
      * Sets up the fixture.
@@ -43,33 +31,25 @@ class CloneListenerTest extends \PHPUnit_Framework_TestCase
      */
     protected function setUp()
     {
-        $this->em = $this->getMockBuilder('Doctrine\ORM\EntityManager')
+	$this->pagePartService = $this->getMockBuilder('Kunstmaan\PagePartBundle\Service\PagePartService')
             ->disableOriginalConstructor()
             ->getMock();
+	$this->pagePartService
+	    ->expects($this->any())
+	    ->method('getPagePartContexts')
+	    ->will($this->returnValue(array('main')));
 
-        $this->repo = $this->getMockBuilder('Doctrine\ORM\EntityRepository')
-            ->setMethods(array('findOrCreateFor', 'copyPageParts', 'setContainer'))
+	$this->pageTemplateService = $this->getMockBuilder('Kunstmaan\PagePartBundle\Service\PageTemplateService')
             ->disableOriginalConstructor()
             ->getMock();
-
-        $this->em->expects($this->any())
-            ->method('getRepository')
-            ->with(
-                $this->logicalOr(
-                    'KunstmaanPagePartBundle:PagePartRef',
-                    'KunstmaanPagePartBundle:PageTemplateConfiguration'
-                )
-            )
-            ->will($this->returnValue($this->repo));
-
-        $this->kernel = $this->getMock('Symfony\Component\HttpKernel\KernelInterface');
 
         $this->configurator = $this->getMock('Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator');
-        $this->configurator->expects($this->any())
+	$this->configurator
+	    ->expects($this->any())
             ->method('getContext')
             ->will($this->returnValue('main'));
 
-        $this->object = new CloneListener($this->em, $this->kernel);
+	$this->object = new CloneListener($this->pageTemplateService, $this->pagePartService);
     }
 
     /**
@@ -94,9 +74,10 @@ class CloneListenerTest extends \PHPUnit_Framework_TestCase
 
         $clone = clone $entity;
 
-        $this->repo->expects($this->once())
+	$this->pagePartService
+	    ->expects($this->once())
             ->method('copyPageParts')
-            ->with($this->em, $entity, $clone, 'main');
+	    ->with($entity, $clone, 'main');
 
         $event = new DeepCloneAndSaveEvent($entity, $clone);
         $this->object->postDeepCloneAndSave($event);
@@ -111,39 +92,47 @@ class CloneListenerTest extends \PHPUnit_Framework_TestCase
             ->setMethods(array('getId', 'getPageTemplates', 'getPagePartAdminConfigurations'))
             ->getMock();
 
-        $entity->expects($this->any())
+	$entity
+	    ->expects($this->any())
             ->method('getPagePartAdminConfigurations')
             ->will($this->returnValue(array($this->configurator)));
 
         $clone = clone $entity;
 
-        $entity->expects($this->any())
+	$entity
+	    ->expects($this->any())
             ->method('getId')
             ->will($this->returnValue(1));
 
-        $clone->expects($this->any())
+	$clone
+	    ->expects($this->any())
             ->method('getId')
             ->will($this->returnValue(2));
 
-        $this->repo->expects($this->once())
+	$this->pagePartService
+	    ->expects($this->once())
             ->method('copyPageParts')
-            ->with($this->em, $entity, $clone, 'main');
+	    ->with($entity, $clone, 'main');
 
         $configuration = new PageTemplateConfiguration();
-        $configuration->setId(1);
-        $configuration->setPageId(1);
+	$configuration
+	    ->setId(1)
+	    ->setPageId(1);
 
-        $this->repo->expects($this->once())
+	$this->pageTemplateService
+	    ->expects($this->once())
             ->method('findOrCreateFor')
             ->with($this->identicalTo($entity))
             ->will($this->returnValue($configuration));
 
         $newConfiguration = clone $configuration;
-        $newConfiguration->setId(null);
-        $newConfiguration->setPageId($clone->getId());
+	$newConfiguration
+	    ->setId(null)
+	    ->setPageId($clone->getId());
 
-        $this->em->expects($this->once())
-            ->method('persist')
+	$this->pageTemplateService
+	    ->expects($this->once())
+	    ->method('saveConfiguration')
             ->with($newConfiguration);
 
         $event = new DeepCloneAndSaveEvent($entity, $clone);
