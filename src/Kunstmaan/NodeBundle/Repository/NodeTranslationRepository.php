@@ -26,7 +26,44 @@ class NodeTranslationRepository extends EntityRepository
      */
     public function getChildren(Node $node)
     {
-        return $this->findBy(array('parent' => $node->getId()));
+        return $this->findBy(array('parent' => $node->getId()), array('weight' => 'ASC'));
+    }
+
+    /**
+     * Get QueryBuilder to fetch online
+     *
+     * Note: you will have to set the parent and lang parameters before executing the query!
+     *
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function getOnlineChildrenQueryBuilder()
+    {
+        return $this->createQueryBuilder('nt')
+            ->select('nt,n')
+            ->join('nt.node', 'n')
+            ->where('n.parent = :parent')
+            ->andWhere('n.deleted = false')
+            ->andWhere('nt.online = true')
+            ->andWhere('nt.lang = :lang')
+            ->orderBy('nt.weight')
+            ->addOrderBy('nt.weight');
+    }
+
+    /**
+     * Get all online child node translations for a given node and language
+     *
+     * @param Node   $node
+     * @param string $lang
+     *
+     * @return array
+     */
+    public function getOnlineChildren(Node $node, $lang)
+    {
+        $qb = $this->getOnlineChildrenQueryBuilder()
+            ->setParameter('parent', $node)
+            ->setParameter('lang', $lang);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -208,8 +245,10 @@ class NodeTranslationRepository extends EntityRepository
         $em        = $this->getEntityManager();
         $className = ClassLookup::getClass($hasNode);
         if (!$hasNode->getId() > 0) {
-            throw new \InvalidArgumentException("The entity of class " . $className .
-                " has no id, maybe you forgot to flush first");
+            throw new \InvalidArgumentException(
+                "The entity of class " . $className .
+                " has no id, maybe you forgot to flush first"
+            );
         }
 
         $nodeTranslation = new NodeTranslation();
@@ -334,5 +373,30 @@ class NodeTranslationRepository extends EntityRepository
             ->setParameter('refEntityName', $refEntityName);
 
         return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * @param NodeTranslation $nodeTranslation
+     *
+     * @return NodeTranslation|null
+     */
+    public function getParentNodeTranslation(NodeTranslation $nodeTranslation)
+    {
+        $parent = $nodeTranslation->getNode()->getParent();
+        if (is_null($parent)) {
+            return null;
+        }
+
+        $qb = $this->createQueryBuilder('nt')
+            ->select('nt,n')
+            ->innerJoin('nt.publicNodeVersion', 'nv')
+            ->innerJoin('nt.node', 'n')
+            ->where('nt.node = :parent')
+            ->andWhere('n.deleted = 0')
+            ->andWhere('nt.lang = :lang')
+            ->setParameter('parent', $parent)
+            ->setParameter('lang', $nodeTranslation->getLang());
+
+        return $qb->getQuery()->getOneOrNullResult();
     }
 }

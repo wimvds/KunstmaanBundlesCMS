@@ -2,7 +2,13 @@
 
 namespace Kunstmaan\NodeBundle\Twig;
 
+use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
+use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
+use Kunstmaan\NodeBundle\Entity\Node;
+use Kunstmaan\NodeBundle\Entity\NodeTranslation;
+use Kunstmaan\NodeBundle\Helper\NodeMenu;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\SecurityContextInterface;
 use Twig_Extension;
 
 use Doctrine\ORM\EntityManager;
@@ -14,7 +20,6 @@ use Kunstmaan\NodeBundle\Entity\AbstractPage;
  */
 class NodeTwigExtension extends Twig_Extension
 {
-
     /**
      * @var EntityManager $em
      */
@@ -26,13 +31,20 @@ class NodeTwigExtension extends Twig_Extension
     private $generator;
 
     /**
-     * @param EntityManager         $em
-     * @param UrlGeneratorInterface $generator
+     * @var SecurityContextInterface
      */
-    public function __construct(EntityManager $em, UrlGeneratorInterface $generator)
-    {
-        $this->em        = $em;
-        $this->generator = $generator;
+    private $securityContext;
+
+    public function __construct(
+        EntityManager $em,
+        UrlGeneratorInterface $generator,
+        SecurityContextInterface $securityContext,
+        AclHelper $aclHelper
+    ) {
+        $this->em              = $em;
+        $this->generator       = $generator;
+        $this->securityContext = $securityContext;
+        $this->aclHelper       = $aclHelper;
     }
 
     /**
@@ -45,9 +57,11 @@ class NodeTwigExtension extends Twig_Extension
         return array(
             new \Twig_SimpleFunction('get_node_for', array($this, 'getNodeFor')),
             new \Twig_SimpleFunction('get_node_translation_for', array($this, 'getNodeTranslationFor')),
+            new \Twig_SimpleFunction('get_page_for', array($this, 'getPageFor')),
             new \Twig_SimpleFunction('get_node_by_internal_name', array($this, 'getNodeByInternalName')),
             new \Twig_SimpleFunction('get_url_by_internal_name', array($this, 'getUrlByInternalName')),
             new \Twig_SimpleFunction('get_path_by_internal_name', array($this, 'getPathByInternalName')),
+            new \Twig_SimpleFunction('get_node_menu', array($this, 'getNodeMenu')),
         );
     }
 
@@ -69,6 +83,17 @@ class NodeTwigExtension extends Twig_Extension
     public function getNodeTranslationFor(AbstractPage $page)
     {
         return $this->em->getRepository('KunstmaanNodeBundle:NodeTranslation')->getNodeTranslationFor($page);
+    }
+
+    /**
+     * @param NodeTranslation $nodeTranslation
+     * @param string          $type
+     *
+     * @return AbstractPage
+     */
+    public function getPageFor(NodeTranslation $nodeTranslation, $type = 'public')
+    {
+        return $nodeTranslation->getRef($this->em, $type);
     }
 
     /**
@@ -125,6 +150,38 @@ class NodeTwigExtension extends Twig_Extension
         );
     }
 
+    /**
+     * @param string $locale
+     * @param Node   $node
+     * @param bool   $includeHiddenFromNav
+     *
+     * @return NodeMenu
+     */
+    public function getNodeMenu($locale, Node $node = null, $includeHiddenFromNav = false)
+    {
+        $nodeMenu = new NodeMenu(
+            $this->em,
+            $this->securityContext,
+            $this->aclHelper,
+            $locale,
+            $node,
+            PermissionMap::PERMISSION_VIEW,
+            false,
+            $includeHiddenFromNav
+        );
+
+        return $nodeMenu;
+    }
+
+    /**
+     * Get slug route parameters for a specific node translation
+     *
+     * @param string $internalName The internal name of the node translation
+     * @param string $locale       The locale of the node translation
+     * @param array  $parameters   Extra parameters
+     *
+     * @return array slug route parameters to be used to display the provided node translation...
+     */
     private function getRouteParametersByInternalName($internalName, $locale, $parameters = array())
     {
         $url         = '';
@@ -151,5 +208,4 @@ class NodeTwigExtension extends Twig_Extension
     {
         return 'node_twig_extension';
     }
-
 }
