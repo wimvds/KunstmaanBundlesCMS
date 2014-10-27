@@ -30,44 +30,86 @@ class NodeTranslationRepository extends EntityRepository
     }
 
     /**
-     * Get QueryBuilder to fetch online
+     * QueryBuilder to fetch node translations (ignoring nodes that have been deleted)
      *
-     * Note: you will have to set the parent and lang parameters before executing the query!
+     * @param string $lang (optional) Only return NodeTranslations for the given language
      *
      * @return \Doctrine\ORM\QueryBuilder
      */
-    public function getOnlineChildrenQueryBuilder()
+    public function getNodeTranslationsQueryBuilder($lang = null)
     {
-        return $this->createQueryBuilder('nt')
-            ->select('nt,n')
-            ->join('nt.node', 'n')
-            ->where('n.parent = :parent')
-            ->andWhere('n.deleted = false')
-            ->andWhere('nt.online = true')
-            ->andWhere('nt.lang = :lang')
+        $queryBuilder = $this->createQueryBuilder('nt')
+            ->select('nt,n,v')
+            ->innerJoin('nt.node', 'n')
+            ->leftJoin('nt.publicNodeVersion', 'v', 'WITH', 'nt.publicNodeVersion = v.id')
+            ->where('n.deleted = false')
             ->orderBy('nt.weight')
             ->addOrderBy('nt.weight');
+
+        if (!empty($lang)) {
+            $queryBuilder
+                ->andWhere('nt.lang = :lang')
+                ->setParameter('lang', $lang);
+        }
+
+        return $queryBuilder;
     }
 
     /**
-     * Get all online child node translations for a given node and language
+     * QueryBuilder to fetch node translations that are currently published (ignoring nodes that have been deleted)
      *
-     * @param Node   $node
-     * @param string $lang
+     * @param string $lang (optional) Only return NodeTranslations for the given language
+     *
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function getOnlineNodeTranslationsQueryBuilder($lang = null)
+    {
+        return $this->getNodeTranslationsQueryBuilder($lang)
+            ->andWhere('nt.online = true');
+    }
+
+    /**
+     * QueryBuilder to fetch immediate child NodeTranslations for a specific node and (optional) language
+     *
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function getChildrenQueryBuilder(Node $parent, $lang = null)
+    {
+        return $this->getNodeTranslationsQueryBuilder($lang)
+            ->andWhere('n.parent = :parent')
+            ->setParameter('parent', $parent);
+    }
+
+    /**
+     * QueryBuilder to fetch immediate child NodeTranslations for a specific node and (optional) language
+     * that are currently published
+     *
+     * @return \Doctrine\ORM\QueryBuilder
+     */
+    public function getOnlineChildrenQueryBuilder(Node $parent, $lang = null)
+    {
+        return $this->getChildrenQueryBuilder($parent, $lang)
+            ->andWhere('nt.online = true');
+    }
+
+    /**
+     * Get all online child node translations for a given node and (optional) language
+     *
+     * @param Node   $parent
+     * @param string $lang (optional, if not specified all languages will be returned)
      *
      * @return array
      */
-    public function getOnlineChildren(Node $node, $lang)
+    public function getOnlineChildren(Node $parent, $lang = null)
     {
-        $qb = $this->getOnlineChildrenQueryBuilder()
-            ->setParameter('parent', $node)
-            ->setParameter('lang', $lang);
-
-        return $qb->getQuery()->getResult();
+        return $this->getOnlineChildrenQueryBuilder($parent, $lang)
+            ->getQuery()->getResult();
     }
 
     /**
-     * This returns the node translations that are visible for guest users
+     * @deprecated Use getOnlineNodeTranslationsQueryBuilder instead
+     *
+     * This returns the node translations that are currently published
      *
      * @return array
      */
@@ -81,7 +123,7 @@ class NodeTranslationRepository extends EntityRepository
     }
 
     /**
-     * Get the nodetranslation for a node
+     * Get the node translation for a node
      *
      * @param HasNodeInterface $hasNode
      *
