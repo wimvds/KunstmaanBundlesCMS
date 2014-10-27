@@ -3,20 +3,14 @@
 namespace Kunstmaan\NodeBundle\Controller;
 
 use Doctrine\ORM\EntityManager;
-use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
-use Kunstmaan\NodeBundle\Helper\NodeMenu;
 use Kunstmaan\NodeBundle\Helper\RenderContext;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 
@@ -41,14 +35,17 @@ class SlugController extends Controller
     public function slugAction(Request $request, $url = null, $preview = false)
     {
         /* @var EntityManager $em */
-        $em     = $this->getDoctrine()->getManager();
+        $em = $this->getDoctrine()->getManager();
         $locale = $request->getLocale();
 
         /* @var NodeTranslation $nodeTranslation */
         $nodeTranslation = $request->get('_nodeTranslation');
         if (!$nodeTranslation) {
             // When the SlugController is used from a different Routing or RouteLoader class, the _nodeTranslation is not set, so we need this fallback
-            $nodeTranslation = $em->getRepository('KunstmaanNodeBundle:NodeTranslation')->getNodeTranslationForUrl($url, $locale);
+            $nodeTranslation = $em->getRepository('KunstmaanNodeBundle:NodeTranslation')->getNodeTranslationForUrl(
+                $url,
+                $locale
+            );
         }
 
         // If no node translation -> 404
@@ -82,14 +79,7 @@ class SlugController extends Controller
         if (false === $securityContext->isGranted(PermissionMap::PERMISSION_VIEW, $node)) {
             throw new AccessDeniedException('You do not have sufficient rights to access this page.');
         }
-
-        /* @var AclHelper $aclHelper */
-        $aclHelper      = $this->container->get('kunstmaan_admin.acl.helper');
-        $includeOffline = $preview;
-        $nodeMenu       = new NodeMenu($em, $securityContext, $aclHelper, $locale, $node, PermissionMap::PERMISSION_VIEW, $includeOffline);
-
         unset($securityContext);
-        unset($aclHelper);
 
         //render page
         $renderContext = new RenderContext(
@@ -97,8 +87,7 @@ class SlugController extends Controller
                 'nodetranslation' => $nodeTranslation,
                 'slug'            => $url,
                 'page'            => $entity,
-                'resource'        => $entity,
-                'nodemenu'        => $nodeMenu,
+                'resource'        => $entity
             )
         );
         if (method_exists($entity, 'getDefaultView')) {

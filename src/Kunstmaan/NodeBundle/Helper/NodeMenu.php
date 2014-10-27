@@ -2,7 +2,7 @@
 
 namespace Kunstmaan\NodeBundle\Helper;
 
-use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
@@ -16,11 +16,8 @@ use Symfony\Component\Security\Core\SecurityContextInterface;
  */
 class NodeMenu
 {
-
-    /***** constructor arguments *****/
-
     /**
-     * @var EntityManager
+     * @var EntityManagerInterface
      */
     private $em;
 
@@ -59,9 +56,6 @@ class NodeMenu
      */
     private $includeHiddenFromNav = false;
 
-
-    /***** temporary storage variables *****/
-
     /**
      * @var NodeMenuItem[]
      */
@@ -88,7 +82,7 @@ class NodeMenu
     private $nodesByInternalName = array();
 
     /**
-     * @param EntityManager            $em                   The entity manager
+     * @param EntityManagerInterface            $em                   The entity manager
      * @param SecurityContextInterface $securityContext      The security context
      * @param AclHelper                $aclHelper            The ACL helper
      * @param string                   $lang                 The language
@@ -97,22 +91,30 @@ class NodeMenu
      * @param bool                     $includeOffline       Include offline pages
      * @param bool                     $includeHiddenFromNav Include hidden pages
      */
-    public function __construct(EntityManager $em, SecurityContextInterface $securityContext, AclHelper $aclHelper, $lang, Node $currentNode = null, $permission = PermissionMap::PERMISSION_VIEW, $includeOffline = false, $includeHiddenFromNav = false)
-    {
-        $this->em = $em;
-        $this->securityContext = $securityContext;
-        $this->aclHelper = $aclHelper;
-        $this->lang = $lang;
-        $this->includeOffline = $includeOffline;
+    public function __construct(
+        EntityManagerInterface $em,
+        SecurityContextInterface $securityContext,
+        AclHelper $aclHelper,
+        $lang,
+        Node $currentNode = null,
+        $permission = PermissionMap::PERMISSION_VIEW,
+        $includeOffline = false,
+        $includeHiddenFromNav = false
+    ) {
+        $this->em                   = $em;
+        $this->securityContext      = $securityContext;
+        $this->aclHelper            = $aclHelper;
+        $this->lang                 = $lang;
+        $this->includeOffline       = $includeOffline;
         $this->includeHiddenFromNav = $includeHiddenFromNav;
-        $this->permission = $permission;
-        $this->currentNode = $currentNode;
+        $this->permission           = $permission;
+        $this->currentNode          = $currentNode;
 
         /* @var NodeRepository $repo */
         $repo = $this->em->getRepository('KunstmaanNodeBundle:Node');
 
         // Get all possible menu items in one query (also fetch offline nodes)
-        $nodes = $repo->getChildNodes(false, $this->lang, $permission, $this->aclHelper, true);
+        $nodes = $repo->getChildNodes(false, $this->lang, $permission, $this->aclHelper, $includeHiddenFromNav);
         foreach ($nodes as $node) {
             $this->allNodes[$node->getId()] = $node;
 
@@ -139,7 +141,7 @@ class NodeMenu
             // To be backwards compatible we need to create the top node MenuItems
             if (array_key_exists(0, $this->childNodes)) {
                 $topNodeMenuItems = array();
-                $topNodes = $this->childNodes[0];
+                $topNodes         = $this->childNodes[0];
                 /* @var Node $topNode */
                 foreach ($topNodes as $topNode) {
                     $nodeTranslation = $topNode->getNodeTranslation($this->lang, $this->includeOffline);
@@ -148,14 +150,17 @@ class NodeMenu
                     }
                 }
 
-                $includeHiddenFromNav = $this->includeHiddenFromNav;
-                $this->topNodeMenuItems = array_filter($topNodeMenuItems, function (NodeMenuItem $entry) use ($includeHiddenFromNav) {
-                    if ($entry->getNode()->isHiddenFromNav() && !$includeHiddenFromNav) {
-                        return false;
-                    }
+                $includeHiddenFromNav   = $this->includeHiddenFromNav;
+                $this->topNodeMenuItems = array_filter(
+                    $topNodeMenuItems,
+                    function (NodeMenuItem $entry) use ($includeHiddenFromNav) {
+                        if ($entry->getNode()->isHiddenFromNav() && !$includeHiddenFromNav) {
+                            return false;
+                        }
 
-                    return true;
-                });
+                        return true;
+                    }
+                );
             }
         }
 
@@ -174,13 +179,13 @@ class NodeMenu
             $repo = $this->em->getRepository('KunstmaanNodeBundle:Node');
 
             // Generate breadcrumb MenuItems - fetch *all* languages so you can link translations if needed
-            $parentNodes = $repo->getAllParents($this->currentNode);
+            $parentNodes        = $repo->getAllParents($this->currentNode);
             $parentNodeMenuItem = null;
             /* @var Node $parentNode */
             foreach ($parentNodes as $parentNode) {
                 $nodeTranslation = $parentNode->getNodeTranslation($this->lang, $this->includeOffline);
                 if (!is_null($nodeTranslation)) {
-                    $nodeMenuItem = new NodeMenuItem($parentNode, $nodeTranslation, $parentNodeMenuItem, $this);
+                    $nodeMenuItem       = new NodeMenuItem($parentNode, $nodeTranslation, $parentNodeMenuItem, $this);
                     $this->breadCrumb[] = $nodeMenuItem;
                     $parentNodeMenuItem = $nodeMenuItem;
                 }
@@ -197,7 +202,7 @@ class NodeMenu
     {
         $breadCrumb = $this->getBreadCrumb();
         if (count($breadCrumb) > 0) {
-            return $breadCrumb[count($breadCrumb)-1];
+            return $breadCrumb[count($breadCrumb) - 1];
         }
 
         return null;
@@ -212,7 +217,7 @@ class NodeMenu
     {
         $breadCrumb = $this->getBreadCrumb();
         if (count($breadCrumb) >= $depth) {
-            return $breadCrumb[$depth-1];
+            return $breadCrumb[$depth - 1];
         }
 
         return null;
@@ -238,13 +243,16 @@ class NodeMenu
                 }
             }
 
-            $children = array_filter($children, function (NodeMenuItem $entry) use ($includeHiddenFromNav) {
-                if ($entry->getNode()->isHiddenFromNav() && !$includeHiddenFromNav) {
-                    return false;
-                }
+            $children = array_filter(
+                $children,
+                function (NodeMenuItem $entry) use ($includeHiddenFromNav) {
+                    if ($entry->getNode()->isHiddenFromNav() && !$includeHiddenFromNav) {
+                        return false;
+                    }
 
-                return true;
-            });
+                    return true;
+                }
+            );
         }
 
         return $children;
@@ -272,7 +280,10 @@ class NodeMenu
      */
     public function getNodeBySlug(NodeTranslation $parentNode, $slug)
     {
-        return $this->em->getRepository('KunstmaanNodeBundle:NodeTranslation')->getNodeTranslationForSlug($slug, $parentNode);
+        return $this->em->getRepository('KunstmaanNodeBundle:NodeTranslation')->getNodeTranslationForSlug(
+            $slug,
+            $parentNode
+        );
     }
 
     /**
@@ -292,12 +303,16 @@ class NodeMenu
 
         if (array_key_exists($internalName, $this->nodesByInternalName)) {
             $nodes = $this->nodesByInternalName[$internalName];
-            $nodes = array_filter($nodes, function (Node $entry) use ($includeOffline) {
-                if ($entry->isDeleted() && !$includeOffline) {
-                    return false;
+            $nodes = array_filter(
+                $nodes,
+                function (Node $entry) use ($includeOffline) {
+                    if ($entry->isDeleted() && !$includeOffline) {
+                        return false;
+                    }
+
+                    return true;
                 }
-                return true;
-            });
+            );
 
             if (!is_null($parent)) {
                 if ($parent instanceof NodeTranslation) {
@@ -305,7 +320,7 @@ class NodeMenu
                 } elseif ($parent instanceof NodeMenuItem) {
                     $parentNode = $parent->getNode();
                 } elseif ($parent instanceof HasNodeInterface) {
-                    $repo = $this->em->getRepository('KunstmaanNodeBundle:Node');
+                    $repo       = $this->em->getRepository('KunstmaanNodeBundle:Node');
                     $parentNode = $repo->getNodeFor($parent);
                 }
 
@@ -374,7 +389,7 @@ class NodeMenu
     }
 
     /**
-     * @return EntityManager
+     * @return EntityManagerInterface
      */
     public function getEntityManager()
     {
@@ -431,5 +446,4 @@ class NodeMenu
 
         return false;
     }
-
 }
