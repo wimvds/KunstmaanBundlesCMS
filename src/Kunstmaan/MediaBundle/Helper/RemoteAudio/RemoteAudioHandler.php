@@ -98,7 +98,7 @@ class RemoteAudioHandler extends AbstractMediaHandler
      */
     public function prepareMedia(Media $media)
     {
-        if (null == $media->getUuid()) {
+        if (null === $media->getUuid()) {
             $uuid = uniqid();
             $media->setUuid($uuid);
         }
@@ -107,11 +107,6 @@ class RemoteAudioHandler extends AbstractMediaHandler
         //update thumbnail
         switch ($audio->getType()) {
             case 'soundcloud':
-
-                /**
-                 * todo: use resolve url so you can use the track url instead of the track code
-                 */
-
                 $scData     = json_decode(
                     file_get_contents(
                         'http://api.soundcloud.com/tracks/' . $code . '.json?client_id=' . $this->getSoundcloudApiKey()

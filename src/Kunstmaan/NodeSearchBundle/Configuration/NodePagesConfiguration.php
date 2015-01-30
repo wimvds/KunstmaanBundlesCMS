@@ -11,8 +11,6 @@ use Kunstmaan\NodeSearchBundle\Helper\SearchViewTemplateInterface;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\NodeBundle\Entity\Node;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
-use Kunstmaan\NodeSearchBundle\Event\Events;
-use Kunstmaan\NodeSearchBundle\Event\IndexNodeEvent;
 use Kunstmaan\NodeSearchBundle\Helper\SearchTypeInterface;
 use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
 use Kunstmaan\SearchBundle\Configuration\SearchConfigurationInterface;
@@ -244,7 +242,7 @@ class NodePagesConfiguration implements SearchConfigurationInterface
     protected function isIndexable(HasNodeInterface $page)
     {
         // If the page doesn't implement IndexableInterface interface or it returns true on isIndexable, index the page
-        return (!($page instanceof IndexableInterface) or $page->isIndexable());
+        return (!($page instanceof IndexableInterface) || $page->isIndexable());
     }
 
     /**
@@ -657,7 +655,7 @@ class NodePagesConfiguration implements SearchConfigurationInterface
         // Check if page is boosted
         $nodeSearch = $this->em->getRepository('KunstmaanNodeSearchBundle:NodeSearch')
             ->findOneByNode($node);
-        if ($nodeSearch != null) {
+        if ($nodeSearch !== null) {
             $doc['_boost'] += $nodeSearch->getBoost();
         }
     }
@@ -723,7 +721,7 @@ class NodePagesConfiguration implements SearchConfigurationInterface
             foreach ($objectAces as $ace) {
                 $securityIdentity = $ace->getSecurityIdentity();
                 if (
-                    $securityIdentity instanceof RoleSecurityIdentity and
+                    $securityIdentity instanceof RoleSecurityIdentity &&
                     ($ace->getMask() & MaskBuilder::MASK_VIEW != 0)
                 ) {
                     $roles[] = $securityIdentity->getRole();

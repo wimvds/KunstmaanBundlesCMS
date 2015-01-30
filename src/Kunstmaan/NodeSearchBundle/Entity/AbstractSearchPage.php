@@ -2,7 +2,6 @@
 
 namespace Kunstmaan\NodeSearchBundle\Entity;
 
-use Doctrine\ORM\Mapping as ORM;
 use Kunstmaan\NodeBundle\Entity\AbstractPage;
 use Kunstmaan\NodeBundle\Helper\RenderContext;
 use Kunstmaan\NodeSearchBundle\PagerFanta\Adapter\SearcherRequestAdapter;
@@ -161,7 +160,7 @@ class AbstractSearchPage extends AbstractPage implements IndexableInterface
     private function getRequestedPage(Request $request)
     {
         $pageNumber = $request->query->getInt('page', 1);
-        if (!$pageNumber or $pageNumber < 1) {
+        if (!$pageNumber || $pageNumber < 1) {
             $pageNumber = 1;
         }
 

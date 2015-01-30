@@ -3,9 +3,6 @@
 namespace Kunstmaan\PagePartBundle\Twig\Extension;
 
 use Doctrine\ORM\EntityManager;
-use Kunstmaan\PagePartBundle\Repository\PagePartRefRepository;
-use Kunstmaan\PagePartBundle\Helper\PagePartInterface;
-use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
 use Kunstmaan\PagePartBundle\Helper\HasPageTemplateInterface;
 use Kunstmaan\PagePartBundle\Helper\PageTemplateConfigurationReader;
 use Kunstmaan\PagePartBundle\PageTemplate\PageTemplate;
@@ -74,8 +71,6 @@ class PageTemplateTwigExtension extends \Twig_Extension
         $pageTemplate = $pageTemplates[$this->getPageTemplate($page)];
 
         $template = $this->environment->loadTemplate($pageTemplate->getTemplate());
-        /* @var $entityRepository PagePartRefRepository */
-        $entityRepository = $this->em->getRepository('KunstmaanPagePartBundle:PagePartRef');
 
         return $template->render($twigContext);
     }

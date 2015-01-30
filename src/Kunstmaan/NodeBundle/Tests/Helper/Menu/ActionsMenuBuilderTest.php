@@ -2,18 +2,13 @@
 
 namespace Kunstmaan\NodeBundle\Tests\Helper\Menu;
 
-use Doctrine\ORM\EntityManager;
-
 use Knp\Menu\MenuFactory;
 use Knp\Menu\Integration\Symfony\RoutingExtension;
-
 use Kunstmaan\NodeBundle\Helper\Menu\ActionsMenuBuilder;
 use Kunstmaan\NodeBundle\Tests\Stubs\TestRepository;
 use Kunstmaan\NodeBundle\Entity\NodeTranslation;
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use Kunstmaan\NodeBundle\Entity\Node;
-
-use Symfony\Cmf\Bundle\RoutingBundle\Admin\Extension\RouteReferrersExtension;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -179,7 +174,7 @@ class ActionsMenuBuilderTest extends \PHPUnit_Framework_TestCase
         $nodeVersion = new NodeVersion();
         $nodeVersion->setType("public");
         $nodeVersion->setNodeTranslation($nodeTranslation);
-        $this->builder->setIsEditableNode(false);
+        $this->builder->setEditableNode(false);
 
         $this->builder->setActiveNodeVersion($nodeVersion);
         $nodeTranslation->setOnline(false);

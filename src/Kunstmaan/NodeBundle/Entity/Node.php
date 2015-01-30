@@ -244,8 +244,6 @@ class Node extends AbstractEntity implements GedmoNode
      * @param NodeTranslation $nodeTranslation
      *
      * @return Node
-     *
-     * @todo Shouldn't we add a check to prevent adding duplicates here?
      */
     public function addNodeTranslation(NodeTranslation $nodeTranslation)
     {
@@ -286,7 +284,7 @@ class Node extends AbstractEntity implements GedmoNode
     {
         $parent  = $this->getParent();
         $parents = array();
-        while ($parent != null) {
+        while ($parent !== null) {
             $parents[] = $parent;
             $parent    = $parent->getParent();
         }

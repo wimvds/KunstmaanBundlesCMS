@@ -1,20 +1,18 @@
 <?php
+
 namespace Kunstmaan\AdminListBundle\AdminList\Configurator;
 
 use Doctrine\ORM\PersistentCollection;
 use InvalidArgumentException;
-
+use Kunstmaan\AdminListBundle\AdminList\BulkAction\BulkActionInterface;
 use Kunstmaan\AdminListBundle\AdminList\ListAction\ListActionInterface;
 use Kunstmaan\AdminListBundle\AdminList\ItemAction\ItemActionInterface;
 use Kunstmaan\AdminListBundle\AdminList\ItemAction\SimpleItemAction;
 use Kunstmaan\AdminListBundle\AdminList\FilterType\FilterTypeInterface;
 use Kunstmaan\AdminListBundle\AdminList\FilterBuilder;
 use Kunstmaan\AdminListBundle\AdminList\Field;
-
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\HttpFoundation\Request;
-
-use Pagerfanta\Pagerfanta;
 
 /**
  * Abstract admin list configurator, this implements the most common functionality from the AdminListConfiguratorInterface
@@ -45,6 +43,11 @@ abstract class AbstractAdminListConfigurator implements AdminListConfiguratorInt
      * @var ListActionInterface[]
      */
     private $listActions = array();
+
+    /**
+     * @var BulkActionInterface[]
+     */
+    private $bulkActions = array();
 
     /**
      * @var AbstractType
@@ -161,10 +164,13 @@ abstract class AbstractAdminListConfigurator implements AdminListConfiguratorInt
 
         $friendlyName = explode("\\", $this->getEntityName());
         $friendlyName = array_pop($friendlyName);
+        $re = '/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/';
+        $a = preg_split($re, $friendlyName);
+        $superFriendlyName = implode(' ', $a);
 
         return array(
-            strtolower($friendlyName) => array('path' => $this->getPathByConvention($this::SUFFIX_ADD),
-                                                        'params' => $params)
+            $superFriendlyName => array('path'   => $this->getPathByConvention($this::SUFFIX_ADD),
+                                        'params' => $params)
         );
     }
 
@@ -403,6 +409,18 @@ abstract class AbstractAdminListConfigurator implements AdminListConfiguratorInt
     }
 
     /**
+     * @param ListActionInterface $listAction
+     *
+     * @return AdminListConfiguratorInterface
+     */
+    public function addListAction(ListActionInterface $listAction)
+    {
+        $this->listActions[] = $listAction;
+
+        return $this;
+    }
+
+    /**
      * @return bool
      */
     public function hasListActions()
@@ -419,15 +437,31 @@ abstract class AbstractAdminListConfigurator implements AdminListConfiguratorInt
     }
 
     /**
-     * @param ListActionInterface $listAction
+     * @param BulkActionInterface $bulkAction
      *
      * @return AdminListConfiguratorInterface
      */
-    public function addListAction(ListActionInterface $listAction)
+    public function addBulkAction(BulkActionInterface $bulkAction)
     {
-        $this->listActions[] = $listAction;
+        $this->bulkActions[] = $bulkAction;
 
         return $this;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasBulkActions()
+    {
+        return !empty($this->bulkActions);
+    }
+
+    /**
+     * @return BulkActionInterface[]
+     */
+    public function getBulkActions()
+    {
+        return $this->bulkActions;
     }
 
     /**
@@ -503,14 +537,12 @@ abstract class AbstractAdminListConfigurator implements AdminListConfiguratorInt
             return $result ? 'true' : 'false';
         }
         if ($result instanceof \DateTime) {
-            // @todo Get rid of hardcoded date format below?
             return $result->format('Y-m-d H:i:s');
         } else {
             if ($result instanceof PersistentCollection) {
                 $results = "";
                 /* @var Object $entry */
                 foreach ($result as $entry) {
-                    // @todo Check where this is used, a PersistentCollection doesn't always have entities with a name property!!
                     $results[] = $entry->getName();
                 }
                 if (empty($results)) {

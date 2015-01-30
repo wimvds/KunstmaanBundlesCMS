@@ -3,12 +3,10 @@
 namespace Kunstmaan\MediaBundle\Helper\File;
 
 use Kunstmaan\MediaBundle\Entity\Folder;
+use Kunstmaan\MediaBundle\Entity\Media;
+use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-
-use Kunstmaan\MediaBundle\Entity\Media;
-
-use Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException;
 
 /**
  * FileHelper
@@ -137,22 +135,14 @@ class FileHelper
     }
 
     /**
-     * @return Media
-     */
-    public function getMedia()
-    {
-        return $this->media;
-    }
-
-    /**
      * @param string $mediaUrl
      *
      * @throws \Symfony\Component\HttpFoundation\File\Exception\AccessDeniedException
      */
     public function getMediaFromUrl($mediaUrl)
     {
-        $path       = tempnam(sys_get_temp_dir(), 'kuma_');
-        $saveFile   = fopen($path, 'w');
+        $path = tempnam(sys_get_temp_dir(), 'kuma_');
+        $saveFile = fopen($path, 'w');
         $this->path = $path;
 
         $ch = curl_init($mediaUrl);
@@ -165,17 +155,25 @@ class FileHelper
         fclose($saveFile);
         chmod($path, 0777);
 
-        $url      = parse_url($effectiveUrl);
-        $info     = pathinfo($url['path']);
+        $url = parse_url($effectiveUrl);
+        $info = pathinfo($url['path']);
         $filename = $info['filename'] . "." . $info['extension'];
 
         $upload = new UploadedFile($path, $filename);
         $this->getMedia()->setContent($upload);
 
-        if ($this->getMedia() == null) {
+        if ($this->getMedia() === null) {
             unlink($path);
             throw new AccessDeniedException("Can not link file");
         }
+    }
+
+    /**
+     * @return Media
+     */
+    public function getMedia()
+    {
+        return $this->media;
     }
 
     /**
@@ -183,7 +181,7 @@ class FileHelper
      */
     public function __destruct()
     {
-        if ($this->path != null) {
+        if ($this->path !== null) {
             unlink($this->path);
         }
     }

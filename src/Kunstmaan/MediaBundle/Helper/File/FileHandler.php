@@ -10,8 +10,6 @@ use Kunstmaan\MediaBundle\Helper\Media\AbstractMediaHandler;
 use Kunstmaan\MediaBundle\Helper\MimeTypeGuesserFactoryInterface;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\MimeType\ExtensionGuesser;
-use Symfony\Component\HttpFoundation\File\MimeType\FileBinaryMimeTypeGuesser;
-use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
 use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesserInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
@@ -111,7 +109,7 @@ class FileHandler extends AbstractMediaHandler
      */
     public function prepareMedia(Media $media)
     {
-        if (null == $media->getUuid()) {
+        if (null === $media->getUuid()) {
             $uuid = uniqid();
             $media->setUuid($uuid);
         }

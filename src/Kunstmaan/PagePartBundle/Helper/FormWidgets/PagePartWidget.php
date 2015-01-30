@@ -8,13 +8,12 @@ use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\Request;
-
 use Kunstmaan\AdminBundle\Helper\FormWidgets\FormWidget;
-use Kunstmaan\AdminBundle\Helper\FormWidgets\Tabs\Tab;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
 use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdmin;
 use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdminFactory;
 use Kunstmaan\PagePartBundle\PagePartAdmin\AbstractPagePartAdminConfigurator;
+use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
 
 /**
  * PagePartWidget
@@ -65,7 +64,7 @@ class PagePartWidget extends FormWidget
      * @param FormFactoryInterface              $formFactory               The form factory
      * @param PagePartAdminFactory              $pagePartAdminFactory      The page part admin factory
      */
-    public function __construct(HasNodeInterface $page, Request $request, EntityManager $em, AbstractPagePartAdminConfigurator $pagePartAdminConfigurator, FormFactoryInterface $formFactory, PagePartAdminFactory $pagePartAdminFactory)
+    public function __construct(HasPagePartsInterface $page, Request $request, EntityManager $em, AbstractPagePartAdminConfigurator $pagePartAdminConfigurator, FormFactoryInterface $formFactory, PagePartAdminFactory $pagePartAdminFactory)
     {
         parent::__construct();
 

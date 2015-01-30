@@ -21,11 +21,8 @@ use Symfony\Component\Security\Acl\Model\ObjectIdentityRetrievalStrategyInterfac
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\SecurityContextInterface;
 use Symfony\Component\Security\Acl\Model\EntryInterface;
-
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-
 use Kunstmaan\AdminBundle\Helper\Security\Acl\AclHelper;
 use Kunstmaan\AdminBundle\Helper\Security\Acl\Permission\PermissionMap;
 use Kunstmaan\AdminListBundle\AdminList\AdminList;
@@ -161,7 +158,7 @@ class NodeAdminController extends Controller
         $myLanguagePage->setTitle('New page');
 
         $this->em->persist($myLanguagePage);
-        $this->em->flush(); // @todo move flush createNodeTranslation also flushes
+        $this->em->flush();
         /* @var NodeTranslation $nodeTranslation */
         $nodeTranslation = $this->em->getRepository('KunstmaanNodeBundle:NodeTranslation')->createNodeTranslationFor($myLanguagePage, $this->locale, $node, $this->user);
         $nodeVersion = $nodeTranslation->getPublicNodeVersion();
@@ -402,7 +399,7 @@ class NodeAdminController extends Controller
             $this->em->persist($nodeTranslation);
         }
 
-        $this->em->flush(); // @todo move flush?
+        $this->em->flush();
 
         /* @var MutableAclProviderInterface $aclProvider */
         $aclProvider = $this->container->get('security.acl.provider');
@@ -464,7 +461,7 @@ class NodeAdminController extends Controller
 
             $nodeTranslation->setWeight($weight);
             $this->em->persist($nodeTranslation);
-            $this->em->flush();
+            $this->em->flush($nodeTranslation);
 
             $this->get('event_dispatcher')->dispatch(Events::POST_PERSIST, new NodeEvent($node, $nodeTranslation, $nodeVersion, $page));
 
@@ -495,7 +492,7 @@ class NodeAdminController extends Controller
         $this->checkPermission($node, PermissionMap::PERMISSION_EDIT);
 
         $request = $this->getRequest();
-        $tabPane = new TabPane('todo', $request, $this->container->get('form.factory')); // @todo initialize separate from constructor?
+        $tabPane = new TabPane('todo', $request, $this->container->get('form.factory'));
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         if (!$nodeTranslation) {
@@ -558,7 +555,7 @@ class NodeAdminController extends Controller
 
         $menubuilder = $this->get('kunstmaan_node.actions_menu_builder');
         $menubuilder->setActiveNodeVersion($nodeVersion);
-        $menubuilder->setIsEditableNode(!$isStructureNode);
+        $menubuilder->setEditableNode(!$isStructureNode);
 
         // Building the form
         $propertiesWidget = new FormWidget();

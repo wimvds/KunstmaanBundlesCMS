@@ -3,25 +3,29 @@
 namespace Kunstmaan\AdminListBundle\Controller;
 
 use Doctrine\ORM\EntityManager;
-
 use Kunstmaan\AdminListBundle\AdminList\AdminList;
 use Kunstmaan\AdminListBundle\AdminList\Configurator\AbstractAdminListConfigurator;
-
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-
 /**
  * AdminListController
  */
 abstract class AdminListController extends Controller
 {
+    /**
+     * You can override this method to return the correct entity manager when using multiple databases ...
+     *
+     * @return \Doctrine\Common\Persistence\ObjectManager|object
+     */
+    protected function getEntityManager()
+    {
+        return $this->getDoctrine()->getManager();
+    }
 
     /**
      * Shows the list of entities
@@ -30,15 +34,22 @@ abstract class AdminListController extends Controller
      *
      * @return array
      */
-    protected function doIndexAction(AbstractAdminListConfigurator $configurator)
+    protected function doIndexAction(AbstractAdminListConfigurator $configurator, Request $request = null)
     {
-        $em = $this->getDoctrine()->getManager();
-        $request = $this->getRequest();
+        $em = $this->getEntityManager();
+        if (is_null($request)) {
+            $request = $this->getRequest();
+        }
         /* @var AdminList $adminlist */
         $adminlist = $this->get("kunstmaan_adminlist.factory")->createList($configurator, $em);
         $adminlist->bindRequest($request);
 
-        return new Response($this->renderView($configurator->getListTemplate(), array('adminlist' => $adminlist, 'adminlistconfigurator' => $configurator, 'addparams' => array())));
+        return new Response(
+            $this->renderView(
+                $configurator->getListTemplate(),
+                array('adminlist' => $adminlist, 'adminlistconfigurator' => $configurator, 'addparams' => array())
+            )
+        );
     }
 
     /**
@@ -49,14 +60,16 @@ abstract class AdminListController extends Controller
      *
      * @return array
      */
-    protected function doExportAction(AbstractAdminListConfigurator $configurator, $_format)
+    protected function doExportAction(AbstractAdminListConfigurator $configurator, $_format, Request $request = null)
     {
         if (!$configurator->canExport()) {
             throw new AccessDeniedHttpException('You do not have sufficient rights to access this page.');
         }
 
-        $em = $this->getDoctrine()->getManager();
-        $request = $this->getRequest();
+        $em = $this->getEntityManager();
+        if (is_null($request)) {
+            $request = $this->getRequest();
+        }
         /* @var AdminList $adminlist */
         $adminlist = $this->get("kunstmaan_adminlist.factory")->createList($configurator, $em);
         $adminlist->bindRequest($request);
@@ -72,15 +85,17 @@ abstract class AdminListController extends Controller
      *
      * @return array
      */
-    protected function doAddAction(AbstractAdminListConfigurator $configurator, $type = null)
+    protected function doAddAction(AbstractAdminListConfigurator $configurator, $type = null, Request $request = null)
     {
         if (!$configurator->canAdd()) {
             throw new AccessDeniedHttpException('You do not have sufficient rights to access this page.');
         }
 
         /* @var EntityManager $em */
-        $em = $this->getDoctrine()->getManager();
-        $request = $this->getRequest();
+        $em = $this->getEntityManager();
+        if (is_null($request)) {
+            $request = $this->getRequest();
+        }
         $entityName = null;
         if (isset($type)) {
             $entityName = $type;
@@ -91,9 +106,9 @@ abstract class AdminListController extends Controller
         $classMetaData = $em->getClassMetadata($entityName);
         // Creates a new instance of the mapped class, without invoking the constructor.
         $classname = $classMetaData->getName();
-        $helper = new $classname();
-        $helper = $configurator->decorateNewEntity($helper);
-        $form = $this->createForm($configurator->getAdminType($helper), $helper);
+        $helper    = new $classname();
+        $helper    = $configurator->decorateNewEntity($helper);
+        $form      = $this->createForm($configurator->getAdminType($helper), $helper);
 
         if ('POST' == $request->getMethod()) {
             $form->submit($request);
@@ -102,11 +117,18 @@ abstract class AdminListController extends Controller
                 $em->flush();
                 $indexUrl = $configurator->getIndexUrl();
 
-                return new RedirectResponse($this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array()));
+                return new RedirectResponse(
+                    $this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array())
+                );
             }
         }
 
-        return new Response($this->renderView($configurator->getAddTemplate(), array('form' => $form->createView(), 'adminlistconfigurator' => $configurator)));
+        return new Response(
+            $this->renderView(
+                $configurator->getAddTemplate(),
+                array('form' => $form->createView(), 'adminlistconfigurator' => $configurator)
+            )
+        );
     }
 
     /**
@@ -118,14 +140,15 @@ abstract class AdminListController extends Controller
      * @throws NotFoundHttpException
      * @return Response
      */
-    protected function doEditAction(AbstractAdminListConfigurator $configurator, $entityId)
+    protected function doEditAction(AbstractAdminListConfigurator $configurator, $entityId, Request $request = null)
     {
         /* @var EntityManager $em */
-        $em = $this->getDoctrine()->getManager();
-
-        $request = $this->getRequest();
+        $em = $this->getEntityManager();
+        if (is_null($request)) {
+            $request = $this->getRequest();
+        }
         $helper = $em->getRepository($configurator->getRepositoryName())->findOneById($entityId);
-        if ($helper == null) {
+        if ($helper === null) {
             throw new NotFoundHttpException("Entity not found.");
         }
 
@@ -142,13 +165,20 @@ abstract class AdminListController extends Controller
                 $em->flush();
                 $indexUrl = $configurator->getIndexUrl();
 
-                return new RedirectResponse($this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array()));
+                return new RedirectResponse(
+                    $this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array())
+                );
             }
         }
 
         $configurator->buildItemActions();
 
-        return new Response($this->renderView($configurator->getEditTemplate(), array('form' => $form->createView(), 'entity' => $helper, 'adminlistconfigurator' => $configurator)));
+        return new Response(
+            $this->renderView(
+                $configurator->getEditTemplate(),
+                array('form' => $form->createView(), 'entity' => $helper, 'adminlistconfigurator' => $configurator)
+            )
+        );
     }
 
     /**
@@ -160,14 +190,15 @@ abstract class AdminListController extends Controller
      * @throws NotFoundHttpException
      * @return Response
      */
-    protected function doDeleteAction(AbstractAdminListConfigurator $configurator, $entityId)
+    protected function doDeleteAction(AbstractAdminListConfigurator $configurator, $entityId, Request $request = null)
     {
         /* @var $em EntityManager */
-        $em = $this->getDoctrine()->getManager();
-
-        $request = $this->getRequest();
+        $em = $this->getEntityManager();
+        if (is_null($request)) {
+            $request = $this->getRequest();
+        }
         $helper = $em->getRepository($configurator->getRepositoryName())->findOneById($entityId);
-        if ($helper == null) {
+        if ($helper === null) {
             throw new NotFoundHttpException("Entity not found.");
         }
         if (!$configurator->canDelete($helper)) {
@@ -180,6 +211,8 @@ abstract class AdminListController extends Controller
             $em->flush();
         }
 
-        return new RedirectResponse($this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array()));
+        return new RedirectResponse(
+            $this->generateUrl($indexUrl['path'], isset($indexUrl['params']) ? $indexUrl['params'] : array())
+        );
     }
 }

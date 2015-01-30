@@ -8,8 +8,6 @@ use Symfony\Component\Form\FormView;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\HttpFoundation\Request;
-
-use Kunstmaan\AdminBundle\Helper\FormWidgets\Tabs\Tab;
 use Kunstmaan\NodeBundle\Entity\PageInterface;
 use Kunstmaan\PagePartBundle\PagePartAdmin\PagePartAdmin;
 use Kunstmaan\PagePartBundle\Entity\PageTemplateConfiguration;
@@ -114,7 +112,7 @@ class PageTemplateWidget extends FormWidget
                         $pagePartAdminConfiguration = $ppac;
                     }
                 }
-                if ($pagePartAdminConfiguration != null) {
+                if ($pagePartAdminConfiguration !== null) {
                     $pagePartWidget = new PagePartWidget($page, $this->request, $this->em, $pagePartAdminConfiguration, $formFactory, $pagePartAdminFactory);
                     $this->widgets[$region->getName()] = $pagePartWidget;
                 }
@@ -225,10 +223,6 @@ class PageTemplateWidget extends FormWidget
     public function getExtraParams(Request $request)
     {
         $params = array();
-        /*$editPagePart = $request->get('edit');
-        if (isset($editPagePart)) {
-            $params['editpagepart'] = $editPagePart;
-        }*/
         return $params;
     }
 

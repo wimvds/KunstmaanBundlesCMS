@@ -2,7 +2,7 @@
 namespace Kunstmaan\DashboardBundle\Command\Helper\Analytics;
 
 use Doctrine\ORM\EntityManager;
-use Kunstmaan\DashboardBundle\Helper\Google\Analytics\QueryHelper;
+use Kunstmaan\DashboardBundle\Entity\AnalyticsOverview;
 use Symfony\Component\Console\Output\OutputInterface;
 
 abstract class AbstractAnalyticsCommandHelper
@@ -40,7 +40,7 @@ abstract class AbstractAnalyticsCommandHelper
      *
      * @return array
      */
-    protected function getTimestamps(&$overview) {
+    protected function getTimestamps(AnalyticsOverview &$overview) {
         // if yearoverview set the begin time to the first day of this year
         $profileStartDate = explode('T', $this->configHelper->getActiveProfile()['created'])[0];
         if ($overview->getUseYear()) {
@@ -61,7 +61,7 @@ abstract class AbstractAnalyticsCommandHelper
      *
      * @return array
      */
-    protected function getExtra($overview) {
+    protected function getExtra(AnalyticsOverview $overview) {
         $extra = array();
 
         // add segment
@@ -77,7 +77,7 @@ abstract class AbstractAnalyticsCommandHelper
      *
      * @return array the resultset
      */
-    protected function executeQuery($overview, $metrics) {
+    protected function executeQuery(AnalyticsOverview $overview, $metrics) {
         $timestamps = $this->getTimestamps($overview);
         $extra = $this->getExtra($overview);
 

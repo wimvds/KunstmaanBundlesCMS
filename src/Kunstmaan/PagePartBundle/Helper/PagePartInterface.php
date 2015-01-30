@@ -3,7 +3,6 @@
 namespace  Kunstmaan\PagePartBundle\Helper;
 
 use Kunstmaan\AdminBundle\Entity\EntityInterface;
-use Kunstmaan\NodeBundle\Entity\PageInterface;
 use Symfony\Component\Form\AbstractType;
 
 /**
@@ -30,7 +29,7 @@ interface PagePartInterface extends EntityInterface
      * @abstract
      * @return string
      */
-    public function getView(PageInterface $page = null);
+    public function getView(HasPagePartsInterface $page = null);
 
     /**
      * @return AbstractType

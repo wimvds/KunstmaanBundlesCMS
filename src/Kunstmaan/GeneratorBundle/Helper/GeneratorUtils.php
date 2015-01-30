@@ -108,7 +108,7 @@ class GeneratorUtils
      */
     public static function replace($toReplace, $replaceText, $filename)
     {
-        $content = @file_get_contents($filename);
+        $content = file_get_contents($filename);
         if ($content) {
             $content = str_replace($toReplace, $replaceText, $content);
             file_put_contents($filename, $content);
@@ -128,8 +128,6 @@ class GeneratorUtils
 
         // Can't have a / at the end.
         if (substr($pathInSkeleton, -1) == '/') {
-
-            //substr_replace($pathInSkeleton,"",-1);
             $pathInSkeleton = rtrim($pathInSkeleton, '/');
         }
 

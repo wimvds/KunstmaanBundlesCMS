@@ -1,60 +1,7 @@
 <?php
-
-/*
- * This file is part of the Symfony package.
- *
- * (c) Fabien Potencier <fabien@symfony.com>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
-# TODO: Add the correct routing.yml files for every bundle that's included. Depending on multi-language or not.
-
-/*
-KunstmaanMediaBundle:
-    resource: "@KunstmaanMediaBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
-
-KunstmaanAdminBundle:
-    resource: "@KunstmaanAdminBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
-
-KunstmaanPagePartBundle:
-    resource: "@KunstmaanPagePartBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
-
-KunstmaanFormBundle:
-    resource: "@KunstmaanFormBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
-
-KunstmaanNodeBundle:
-    resource: "@KunstmaanNodeBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
-
-KunstmaanSearchBundle:
-    resource: "@KunstmaanSearchBundle/Resources/config/routing.yml"
-    prefix:   /{_locale}/
-    requirements:
-        _locale: %requiredlocales%
- */
-
 namespace Kunstmaan\GeneratorBundle\Generator;
 
-use Symfony\Component\HttpKernel\Bundle\Bundle;
-
 use Sensio\Bundle\GeneratorBundle\Generator\Generator;
-
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\DependencyInjection\Container;
 

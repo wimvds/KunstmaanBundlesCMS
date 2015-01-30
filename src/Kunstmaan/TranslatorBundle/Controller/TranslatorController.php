@@ -2,13 +2,12 @@
 
 namespace Kunstmaan\TranslatorBundle\Controller;
 
+use Doctrine\ORM\EntityManager;
 use Kunstmaan\AdminListBundle\AdminList\Configurator\AbstractAdminListConfigurator;
 use Kunstmaan\TranslatorBundle\AdminList\TranslationAdminListConfigurator;
 use Kunstmaan\AdminListBundle\Controller\AdminListController;
 use Kunstmaan\TranslatorBundle\Form\TranslationAdminType;
 use Kunstmaan\TranslatorBundle\Entity\Translation;
-
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Bundle\FrameworkBundle\Translation\Translator;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,11 +16,10 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
-use Symfony\Component\Validator\Constraints\NotBlank;
+
 
 class TranslatorController extends AdminListController
 {
@@ -62,6 +60,7 @@ class TranslatorController extends AdminListController
     /**
      * The add action
      *
+     * @Route("/add", name="KunstmaanTranslatorBundle_settings_translations_add")
      * @Method({"GET", "POST"})
      * @Template("KunstmaanTranslatorBundle:Translator:addTranslation.html.twig")
      *
@@ -203,7 +202,7 @@ class TranslatorController extends AdminListController
           array('domain' => $domain, 'keyword' => $keyword, 'locale' => $locale)
         );
 
-        if ($translation == null) {
+        if ($translation === null) {
             $addUrl = $configurator->getAddUrlFor(
               array('domain' => $domain, 'keyword' => $keyword, 'locale' => $locale)
             );

@@ -5,16 +5,11 @@ php:
   - 5.4
   - 5.5
   - 5.6
-  - hhvm-nightly
-
-matrix:
-    allow_failures:
-        - php: hhvm-nightly
 
 env:
   - SYMFONY_VERSION="2.3.*"
-  - SYMFONY_VERSION="2.4.*"
   - SYMFONY_VERSION="2.5.*"
+  - SYMFONY_VERSION="2.6.*"
 
 before_script:
     - composer selfupdate
@@ -22,14 +17,15 @@ before_script:
     - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ] && [ $(php -r "echo PHP_MINOR_VERSION;") -le 4 ]; then echo "extension = apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi;'
     - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]; then echo "extension = memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi;'
     - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]; then echo "extension = memcache.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini; fi;'
+    - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "hhvm-nightly" ]; then echo "memory_limit = -1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini; fi;'
     - sudo locale-gen nl_BE.UTF-8 && sudo update-locale
     - composer --prefer-source --dev install
     - composer require symfony/symfony:${SYMFONY_VERSION}
-    - sh -c 'if [ "$TRAVIS_PHP_VERSION" != "5.3.3" ]; then phpunit --self-update; fi;'
+    - wget https://phar.phpunit.de/phpunit.phar
+    - wget https://scrutinizer-ci.com/ocular.phar
 
 script:
-    - phpunit --coverage-clover=coverage.clover
-    - wget https://scrutinizer-ci.com/ocular.phar
+    - php phpunit.phar --coverage-clover=coverage.clover
     - php ocular.phar code-coverage:upload --format=php-clover coverage.clover
 
 notifications:
