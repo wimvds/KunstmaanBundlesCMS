@@ -16,9 +16,6 @@ use Symfony\Component\Security\Core\SecurityContextInterface;
  */
 class NodeMenu
 {
-
-    /***** constructor arguments *****/
-
     /**
      * @var EntityManager
      */
@@ -58,9 +55,6 @@ class NodeMenu
      * @var bool
      */
     private $includeHiddenFromNav = false;
-
-
-    /***** temporary storage variables *****/
 
     /**
      * @var NodeMenuItem[]
@@ -107,25 +101,7 @@ class NodeMenu
         $this->includeHiddenFromNav = $includeHiddenFromNav;
         $this->permission = $permission;
         $this->currentNode = $currentNode;
-
-        /* @var NodeRepository $repo */
-        $repo = $this->em->getRepository('KunstmaanNodeBundle:Node');
-
-        // Get all possible menu items in one query (also fetch offline nodes)
-        $nodes = $repo->getChildNodes(false, $this->lang, $permission, $this->aclHelper, true);
-        foreach ($nodes as $node) {
-            $this->allNodes[$node->getId()] = $node;
-
-            if ($node->getParent()) {
-                $this->childNodes[$node->getParent()->getId()][] = $node;
-            } else {
-                $this->childNodes[0][] = $node;
-            }
-
-            if ($node->getInternalName()) {
-                $this->nodesByInternalName[$node->getInternalName()][] = $node;
-            }
-        }
+        // $this->fetchNodes();
     }
 
     /**
@@ -134,6 +110,7 @@ class NodeMenu
     public function getTopNodes()
     {
         if (!is_array($this->topNodeMenuItems)) {
+            $this->fetchNodes();
             $this->topNodeMenuItems = array();
 
             // To be backwards compatible we need to create the top node MenuItems
@@ -227,7 +204,7 @@ class NodeMenu
     public function getChildren(Node $node, $includeHiddenFromNav = true)
     {
         $children = array();
-
+        $this->fetchNodes();
         if (array_key_exists($node->getId(), $this->childNodes)) {
             $nodes = $this->childNodes[$node->getId()];
             /* @var Node $childNode */
@@ -257,6 +234,7 @@ class NodeMenu
      */
     public function getParent(Node $node)
     {
+        $this->fetchNodes();
         if ($node->getParent() && array_key_exists($node->getParent()->getId(), $this->allNodes)) {
             return $this->allNodes[$node->getParent()->getId()];
         }
@@ -276,6 +254,8 @@ class NodeMenu
     }
 
     /**
+     * @deprecated Use the Twig helper functions instead
+     *
      * @param string                                        $internalName The internal name
      * @param NodeTranslation|NodeMenuItem|HasNodeInterface $parent       The parent
      * @param bool                                          $includeOffline
@@ -289,7 +269,7 @@ class NodeMenu
         if (is_null($includeOffline)) {
             $includeOffline = $this->includeOffline;
         }
-
+        $this->fetchNodes();
         if (array_key_exists($internalName, $this->nodesByInternalName)) {
             $nodes = $this->nodesByInternalName[$internalName];
             $nodes = array_filter($nodes, function (Node $entry) use ($includeOffline) {
@@ -432,4 +412,32 @@ class NodeMenu
         return false;
     }
 
+    /**
+     * Fetch & cache nodes ...
+     */
+    private function fetchNodes()
+    {
+        if (!empty($this->childNodes)) {
+            return;
+        }
+
+        /* @var NodeRepository $repo */
+        $repo = $this->em->getRepository('KunstmaanNodeBundle:Node');
+
+        // Get all possible menu items in one query (also fetch offline nodes)
+        $nodes = $repo->getChildNodes(false, $this->lang, $this->permission, $this->aclHelper, true);
+        foreach ($nodes as $node) {
+            $this->allNodes[$node->getId()] = $node;
+
+            if ($node->getParent()) {
+                $this->childNodes[$node->getParent()->getId()][] = $node;
+            } else {
+                $this->childNodes[0][] = $node;
+            }
+
+            if ($node->getInternalName()) {
+                $this->nodesByInternalName[$node->getInternalName()][] = $node;
+            }
+        }
+    }
 }
