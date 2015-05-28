@@ -3,6 +3,8 @@
 namespace Kunstmaan\AdminListBundle\Controller;
 
 use Doctrine\ORM\EntityManager;
+use Kunstmaan\AdminBundle\Event\AdaptSimpleFormEvent;
+use Kunstmaan\AdminBundle\Event\Events;
 use Kunstmaan\AdminListBundle\AdminList\AdminList;
 use Kunstmaan\AdminListBundle\AdminList\Configurator\AbstractAdminListConfigurator;
 use Symfony\Component\HttpFoundation\Request;
@@ -74,6 +76,7 @@ abstract class AdminListController extends Controller
 
         /* @var AdminList $adminList */
         $adminList = $this->get("kunstmaan_adminlist.factory")->createExportList($configurator, $em);
+        $adminList->bindRequest($request);
 
         return $this->get("kunstmaan_adminlist.service.export")->getDownloadableResponse($adminList, $_format);
     }
@@ -162,11 +165,22 @@ abstract class AdminListController extends Controller
         if (!$configurator->canEdit($helper)) {
             throw new AccessDeniedHttpException('You do not have sufficient rights to access this page.');
         }
+        $formType = $configurator->getAdminType($helper);
 
-        $form = $this->createForm($configurator->getAdminType($helper), $helper);
+        $event = new AdaptSimpleFormEvent($request, $formType, $helper);
+        $event = $this->container->get('event_dispatcher')->dispatch(Events::ADAPT_SIMPLE_FORM , $event);
+        $tabPane = $event->getTabPane();
+
+        $form = $this->createForm($formType , $helper);
 
         if ($request->isMethod('POST')) {
-            $form->submit($request);
+            if($tabPane){
+                $tabPane->bindRequest($request);
+                $form = $tabPane->getForm();
+            } else {
+                $form->submit($request);
+            }
+
             if ($form->isValid()) {
                 $em->persist($helper);
                 $em->flush();
@@ -180,10 +194,15 @@ abstract class AdminListController extends Controller
 
         $configurator->buildItemActions();
 
+    $params =  array('form' => $form->createView(), 'entity' => $helper, 'adminlistconfigurator' => $configurator);
+
+    if($tabPane) {
+        $params = array_merge($params, array('tabPane' => $tabPane));
+    }
+
         return new Response(
             $this->renderView(
-                $configurator->getEditTemplate(),
-                array('form' => $form->createView(), 'entity' => $helper, 'adminlistconfigurator' => $configurator)
+            $configurator->getEditTemplate(), $params
             )
         );
     }

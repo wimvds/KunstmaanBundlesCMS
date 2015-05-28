@@ -14,7 +14,7 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=5.3.9",
+        "php": ">=5.4.0",
         "symfony/symfony": "~2.3",
         "ddeboer/data-import-bundle": "0.1.*",
         "gedmo/doctrine-extensions": "2.3.*",
@@ -32,7 +32,7 @@
     "target-dir": "Kunstmaan/FormBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "3.0.x-dev"
+            "dev-master": "3.2-dev"
         }
     }
 }

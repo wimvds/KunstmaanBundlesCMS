@@ -1,14 +1,16 @@
 parameters:
     kunstmaan_node.version_timeout: 3600
     kunstmaan_node.slugrouter.class: 'Kunstmaan\NodeBundle\Router\SlugRouter'
-
+    kunstmaan_node.sluglistener.class: 'Kunstmaan\NodeBundle\EventListener\SlugListener'
 services:
     kunstmaan_node.nodetranslation.listener:
         class: Kunstmaan\NodeBundle\EventListener\NodeTranslationListener
-        arguments: ["@session", "@kunstmaan_admin.logger"]
+        arguments: ["@session", "@kunstmaan_admin.logger" , "@kunstmaan_utilities.slugifier"]
         tags:
             - { name: 'doctrine.event_listener', event: 'onFlush', method: 'onFlush' }
             - { name: 'doctrine.event_listener', event: 'postFlush', method: 'postFlush' }
+            - { name: 'doctrine.event_listener', event: 'prePersist', method: 'prePersist' }
+            - { name: 'doctrine.event_listener', event: 'preUpdate', method: 'preUpdate' }
 
     kunstmaan_node.menu.adaptor.pages:
         class: Kunstmaan\NodeBundle\Helper\Menu\PageMenuAdaptor
@@ -120,3 +122,21 @@ services:
         class: Kunstmaan\NodeBundle\Command\FixTimestampsCommand
         calls:
             - [setContainer, ["@service_container"] ]
+
+    kunstmaan_node.slug.listener:
+        class: "%kunstmaan_node.sluglistener.class%"
+        arguments: ["@doctrine.orm.entity_manager","@controller_resolver", "@event_dispatcher"]
+        tags:
+            - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
+
+    kunstmaan_node.slug.security.listener:
+        class: Kunstmaan\NodeBundle\EventListener\SlugSecurityListener
+        arguments: ["@request_stack" , "@doctrine.orm.entity_manager", "@security.context" , "@kunstmaan_admin.acl.helper" ]
+        tags:
+            - { name: kernel.event_listener, event: kunstmaan_node.slug.security, method: onSlugSecurityEvent }
+
+    kunstmaan_node.render.context.listener:
+        class: Kunstmaan\NodeBundle\EventListener\RenderContextListener
+        arguments: ["@templating"]
+        tags:
+            - { name: kernel.event_listener, event: kernel.view, method: onKernelView }

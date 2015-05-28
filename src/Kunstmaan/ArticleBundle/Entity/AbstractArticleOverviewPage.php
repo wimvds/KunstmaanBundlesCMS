@@ -3,6 +3,7 @@
 namespace Kunstmaan\ArticleBundle\Entity;
 
 use Kunstmaan\ArticleBundle\PagePartAdmin\AbstractArticleOverviewPagePagePartAdminConfigurator;
+use Kunstmaan\NodeBundle\Controller\SlugActionInterface;
 use Kunstmaan\NodeBundle\Entity\AbstractPage;
 use Kunstmaan\NodeBundle\Helper\RenderContext;
 use Kunstmaan\PagePartBundle\Helper\HasPagePartsInterface;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpFoundation\Request;
 /**
  * The article overview page which shows its articles
  */
-abstract class AbstractArticleOverviewPage extends AbstractPage implements HasPagePartsInterface
+abstract class AbstractArticleOverviewPage extends AbstractPage implements HasPagePartsInterface, SlugActionInterface
 {
     /**
      * @return array
@@ -31,29 +32,6 @@ abstract class AbstractArticleOverviewPage extends AbstractPage implements HasPa
     public function getPagePartAdminConfigurations()
     {
         return array(new AbstractArticleOverviewPagePagePartAdminConfigurator());
-    }
-
-    /**
-     * @param ContainerInterface $container
-     * @param Request            $request
-     * @param RenderContext      $context
-     */
-    public function service(ContainerInterface $container, Request $request, RenderContext $context)
-    {
-        parent::service($container, $request, $context);
-
-        $em = $container->get('doctrine')->getManager();
-        $repository = $this->getArticleRepository($em);
-        $adapter = new ArrayAdapter($repository->getArticles($request->getLocale()));
-        $pagerfanta = new Pagerfanta($adapter);
-
-        $pagenumber = $request->get('page');
-        if (!$pagenumber || $pagenumber < 1) {
-            $pagenumber = 1;
-        }
-        $pagerfanta->setCurrentPage($pagenumber);
-        $context['pagerfanta'] = $pagerfanta;
-
     }
 
     /**
@@ -73,4 +51,8 @@ abstract class AbstractArticleOverviewPage extends AbstractPage implements HasPa
         return "KunstmaanArticleBundle:AbstractArticleOverviewPage:view.html.twig";
     }
 
+    public function getControllerAction()
+    {
+        return 'KunstmaanArticleBundle:AbstractArticleOverviewPage:service';
+    }
 }

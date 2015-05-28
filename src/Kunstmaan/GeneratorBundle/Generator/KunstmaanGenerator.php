@@ -355,6 +355,29 @@ class KunstmaanGenerator extends Generator
     }
 
     /**
+     * Remove a directory from the filesystem.
+     *
+     * @param string $targetDir
+     */
+    public function removeDirectory($targetDir)
+    {
+	// Make sure the target dir contain a trailing slash
+	$targetDir = rtrim($targetDir, '/') . '/';
+
+	$this->filesystem->remove($targetDir);
+    }
+
+    /**
+     * Remove a file from the filesystem.
+     *
+     * @param string $file
+     */
+    public function removeFile($file)
+    {
+	$this->filesystem->remove($file);
+    }
+
+    /**
      * Render a twig file with custom twig tags.
      *
      * @param string $template
@@ -403,7 +426,7 @@ class KunstmaanGenerator extends Generator
         if (!is_dir(dirname($target))) {
             mkdir(dirname($target), 0777, true);
         }
-
+        
         return file_put_contents($target, $this->renderTwig($template, $parameters, $sourceDir));
     }
 }

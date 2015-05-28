@@ -8,6 +8,7 @@ use Faker\Provider\Base;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 use Symfony\Component\Yaml\Yaml;
+use Symfony\Component\Finder\Finder;
 
 /**
  * Generates all classes/files for a new pagepart
@@ -75,7 +76,13 @@ class PagePartGenerator extends KunstmaanGenerator
      */
     private function generatePagePartEntity()
     {
-        list($entityCode, $entityPath) = $this->generateEntity($this->bundle, $this->entity, $this->fields, 'PageParts', $this->prefix, 'Kunstmaan\PagePartBundle\Entity\AbstractPagePart');
+        if (file_exists($this->bundle->getPath().'/Entity/PageParts/AbstractPagePart.php')) {
+            $abstractClass = $this->bundle->getNamespace().'\Entity\PageParts\AbstractPagePart';
+        } else {
+            $abstractClass = 'Kunstmaan\PagePartBundle\Entity\AbstractPagePart';
+        }
+
+        list($entityCode, $entityPath) = $this->generateEntity($this->bundle, $this->entity, $this->fields, 'PageParts', $this->prefix, $abstractClass);
 
         // Add some extra functions in the generated entity :s
         $params = array(
@@ -95,7 +102,7 @@ class PagePartGenerator extends KunstmaanGenerator
 
         $this->assistant->writeLine('Generating entity : <info>OK</info>');
     }
-
+    
     /**
      * Generate the admin form type entity.
      */
@@ -177,9 +184,11 @@ class PagePartGenerator extends KunstmaanGenerator
         */
 
         // Get a list of page templates that use this context
-        $allTemplates = glob($configDir.'/pagetemplates/*.yml');
+        $templateFinder = new Finder();
+        $templateFinder->files()->in($configDir.'/pagetemplates/*.yml');
+
         $contextTemplates = array();
-        foreach ($allTemplates as $templatePath) {
+        foreach ($templateFinder as $templatePath) {
             $parts = explode("/", $templatePath);
             $fileName = basename($parts[count($parts)-1], '.yml');
 
@@ -249,9 +258,11 @@ class PagePartGenerator extends KunstmaanGenerator
         $images = $this->registry->getRepository('KunstmaanMediaBundle:Media')->findBy(array('folder' => $folder, 'deleted' => false), array(), 2);
 
         // Get all the available pages
-        $allPages = glob($this->bundle->getPath().'/Entity/Pages/*.php');
+        $finder = new Finder();
+        $finder->files()->in($this->bundle->getPath().'/Entity/Pages/*.php');
+
         $pages = array();
-        foreach ($allPages as $pageFile) {
+        foreach ($finder as $pageFile) {
             $parts = explode("/", $pageFile);
             $className = basename($parts[count($parts)-1], '.php');
 
@@ -334,7 +345,7 @@ class PagePartGenerator extends KunstmaanGenerator
                                             'label' => $this->labelCase($name),
                                             'random' => 'http://www.'.strtolower(Lorem::word()).'.com'
                                         );
-                                    } elseif ($blocks[2] == 'textarea' && array_key_exists('class', $attr) && $attr['class'] == 'rich_editor') {
+				    } elseif ($blocks[2] == 'textarea' && array_key_exists('class', $attr) && $attr['class'] == 'js-rich-editor rich-editor') {
                                         $pageFields[]['rich_text'] = array(
                                             'label' => $this->labelCase($name),
                                             'random' => Lorem::sentence()

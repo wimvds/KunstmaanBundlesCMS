@@ -14,7 +14,7 @@
     ],
     "minimum-stability": "dev",
     "require": {
-        "php": ">=5.3.3",
+        "php": ">=5.4.0",
         "symfony/symfony": "~2.3",
         "gedmo/doctrine-extensions": "2.3.*",
         "kunstmaan/admin-bundle": "~3.0.0",
@@ -28,7 +28,7 @@
     "target-dir": "Kunstmaan/SeoBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "3.0.x-dev"
+            "dev-master": "3.2-dev"
         }
     }
 }

@@ -6,11 +6,13 @@ use Doctrine\ORM\EntityManager,
     Doctrine\ORM\Event\OnFlushEventArgs,
     Doctrine\ORM\Event\PostFlushEventArgs;
 
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Kunstmaan\NodeBundle\Entity\Node,
     Kunstmaan\NodeBundle\Entity\NodeTranslation;
 
 use Kunstmaan\NodeBundle\Entity\NodeVersion;
 use Kunstmaan\NodeBundle\Entity\HasNodeInterface;
+use Kunstmaan\UtilitiesBundle\Helper\SlugifierInterface;
 use Symfony\Bridge\Monolog\Logger;
 use Symfony\Component\HttpFoundation\Session\Session;
 
@@ -26,15 +28,63 @@ class NodeTranslationListener
     private $nodeTranslations;
 
     /**
+     * @var SlugifierInterface
+     */
+    private $slugifier;
+
+    /**
      * @param Session $session The session
      * @param Logger  $logger  The logger
      */
-    public function __construct(Session $session, $logger)
+    public function __construct(Session $session, $logger, SlugifierInterface $slugifier)
     {
         $this->nodeTranslations = array();
         $this->session = $session;
         $this->logger = $logger;
+        $this->slugifier = $slugifier;
     }
+
+    /**
+     * @param LifecycleEventArgs $args
+     */
+    public function prePersist(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+
+        if ($entity instanceof NodeTranslation) {
+            $this->setSlugWhenEmpty($entity, $args->getEntityManager());
+        }
+    }
+
+    /**
+     * @param LifecycleEventArgs $args
+     */
+    public function preUpdate(LifecycleEventArgs $args)
+    {
+        $entity = $args->getEntity();
+
+        if ($entity instanceof NodeTranslation) {
+            $this->setSlugWhenEmpty($entity, $args->getEntityManager());
+        }
+    }
+
+    private function setSlugWhenEmpty(NodeTranslation $nodeTranslation, EntityManager $em)
+    {
+        $publicNode = $nodeTranslation->getRef($em);
+
+        /** Do nothing for StructureNode objects, skip */
+        if ($publicNode instanceof HasNodeInterface && $publicNode->isStructureNode()) {
+            return;
+        }
+
+        /**
+         * If no slug is set and no structure node, apply title as slug
+         */
+        if ($nodeTranslation->getSlug() == null && $nodeTranslation->getNode()->getParent() != null) {
+            $nodeTranslation->setSlug($this->slugifier->slugify($nodeTranslation->getTitle()));
+        }
+    }
+
 
     /**
      * onFlush doctrine event - collect all nodetranslations in scheduled entity updates here
@@ -200,7 +250,7 @@ class NodeTranslationListener
 
         if (count($translations) > 0) {
             $oldUrl = $translation->getFullSlug();
-            $translation->setSlug($this->IncrementString($translation->getSlug()));
+            $translation->setSlug($this->slugifier->slugify($this->IncrementString($translation->getSlug())));
             $newUrl = $translation->getFullSlug();
 
             $message = 'The URL of the page has been changed from ' . $oldUrl . ' to ' . $newUrl . ' since another page already uses this URL.';

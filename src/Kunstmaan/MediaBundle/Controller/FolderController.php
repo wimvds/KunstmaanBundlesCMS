@@ -82,7 +82,8 @@ class FolderController extends Controller
             'subform'       => $subForm->createView(),
             'editform'      => $editForm->createView(),
             'folder'        => $folder,
-            'adminlist'     => $adminList
+            'adminlist'     => $adminList,
+            'type'          => null,
         );
     }
 
@@ -113,12 +114,17 @@ class FolderController extends Controller
             $this->get('session')->getFlashBag()->add('success', 'Folder \'' . $folderName . '\' has been deleted!');
             $folderId = $parentFolder->getId();
         }
+        if (strpos($_SERVER['HTTP_REFERER'],'chooser')) {
+            $redirect = 'KunstmaanMediaBundle_chooser_show_folder';
+        } else $redirect = 'KunstmaanMediaBundle_folder_show';
+
+        $type = $this->get('request')->get('type');
 
         return new RedirectResponse(
-            $this->generateUrl(
-                'KunstmaanMediaBundle_folder_show',
+            $this->generateUrl($redirect,
                 array(
-                    'folderId' => $folderId
+                    'folderId' => $folderId,
+                    'type' => $type,
                 )
             )
         );
@@ -153,16 +159,19 @@ class FolderController extends Controller
                     'success',
                     'Folder \'' . $folder->getName() . '\' has been created!'
                 );
+                if (strpos($_SERVER['HTTP_REFERER'],'chooser') !== false) {
+                    $redirect = 'KunstmaanMediaBundle_chooser_show_folder';
+                } else $redirect = 'KunstmaanMediaBundle_folder_show';
 
-                return new Response(
-                    '<script>window.location="' .
-                    $this->generateUrl(
-                        'KunstmaanMediaBundle_folder_show',
+                $type = $request->get('type');
+
+                return new RedirectResponse(
+                    $this->generateUrl( $redirect,
                         array(
-                            'folderId' => $folder->getId()
+                            'folderId' => $folder->getId(),
+                            'type' => $type,
                         )
-                    ) .
-                    '"</script>'
+                    )
                 );
             }
         }

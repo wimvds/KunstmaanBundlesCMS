@@ -1,0 +1,11 @@
+# Media
+seo:
+    robots:
+        tip: Tip:
+        warning: This is a default value and example, no custom robots.txt has been defined.
+        moreinfo: You can find more information about the Kunstmaan robots.txt at our
+
+    action:
+        save: Save
+        cancel: Cancel
+        preview: Preview
