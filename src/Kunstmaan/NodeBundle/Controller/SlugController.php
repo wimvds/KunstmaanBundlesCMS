@@ -87,7 +87,8 @@ class SlugController extends Controller
                 'nodetranslation' => $nodeTranslation,
                 'slug'            => $url,
                 'page'            => $entity,
-                'resource'        => $entity
+                'resource'        => $entity,
+                'isPreview'       => $preview,
             )
         );
         if (method_exists($entity, 'getDefaultView')) {
